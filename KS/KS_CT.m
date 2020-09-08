@@ -1,7 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Krusell-Smith Model (1998) in Continuous Time by KS Algorithm
 % KS algorithm is refered by Villaverde et al.(2019 NBER)
-% Masakazu EMOTO @ Kobe univerisity 2020/07/22 
+% Masakazu Emoto @ Kobe univerisity 2020/07/22 
 % Address : masakazu.emoto@gmail.com
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

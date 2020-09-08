@@ -1,3 +1,8 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Plotting the simulation results of the three algorithms
+% Masakazu Emoto @ Kobe univerisity 2020/07/22 
+% Address : masakazu.emoto@gmail.com
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 load('XPApath.mat')
 load('KSpath.mat')

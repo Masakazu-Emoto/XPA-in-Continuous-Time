@@ -1,7 +1,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Krusell-Smith Model (1998) in Continuous Time by XPA Algorithm
 % XPA algoithm is cited by Sunakawa (2020 Computational Economics)
-% Masakazu EMOTO @ Kobe univerisity 2020/07/22 
+% Masakazu Emoto @ Kobe univerisity 2020/07/22 
 % Address : masakazu.emoto@gmail.com
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

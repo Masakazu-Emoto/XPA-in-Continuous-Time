@@ -1,3 +1,8 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Plot of the comparison of Den Haan Error in the case of high TFP Volatility
+% Masakazu Emoto @ Kobe univerisity 2020/07/22 
+% Address : masakazu.emoto@gmail.com
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 load('XPA_DH.mat')
 load('KS_DH.mat')

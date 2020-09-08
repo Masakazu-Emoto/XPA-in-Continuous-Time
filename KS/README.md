@@ -1,10 +1,10 @@
-# Ahn-Reiter Algorithm in Continuous Time
+# Krusell-Smith (KS) Algorithm in Continuous Time
 
-This is a program for solving Krusell-Smith model in continuos time by Ahn-Reiter algorithm as described in
+This is a program for solving Krusell-Smith model in continuos time by KS algorithm as described in
 
 * Emoto and Sunakawa "Applying the Explicit Aggregation Algorithm to Heterogeneous Agent Models in Continuous Time."
 * https://tkksnk.github.io/wps/
 
-This code is refered and modified by Ahn et al.(2017 NBER)
+This code is refered and Modified by Villaverde et al.(2019 NBER)
 
 For questions like code, etc., email: Masakazu Emoto <masakazu.emoto@gmail.com>
