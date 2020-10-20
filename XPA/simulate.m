@@ -1,5 +1,15 @@
-function [simvalue, sim_mu, simK, simKK] = simulate(randZ, muini, Ass, Kdot)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% "Applying the Explicit Aggregation Algorithm to Heterogeneous Agent Models in Continuous Time."
+% By Masakazu Emoto and Takeki Sunakawa
+% This code simulates and derives the path of aggregate capital
+% This code is refered by Villaverde's code (2019 NBER)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Masakazu EMOTO @ Kobe univerisity 2020/10/22 
+% Address : masakazu.emoto@gmail.com
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
+function [sim_mu, simK, simKK] = simulate(randZ, muini, Ass, Kdot)
+
     global gamma rho alpha delta la intx x mu sigma com tau LAve 
     global maxit maxitK crit critK Delta damp
     global inta amin amax grida da aa aaa xx xxx Aswitch
@@ -7,13 +17,16 @@ function [simvalue, sim_mu, simK, simKK] = simulate(randZ, muini, Ass, Kdot)
     global Zmax Zmin Zmean intZ zmu zsigma gridZ dZ ddZ
     global T N vtime dT
     
-    %%%%%%%%%% 
-    % This code is to calculate the stochastic steady state 
-    % This code is refered by Villaverde's code (2019 NBER)
-    %%%%%%%%%% 
-    
+    % Container
     simK = zeros(N,1); simKK = zeros(N,1); 
     
+    Zup = zeros(N,1); Zdown = zeros(N,1);
+    Kup = zeros(N,1); Kdown = zeros(N,1);
+    KKup = zeros(N,1); KKdown = zeros(N,1);
+    
+    zweight = zeros(N,1); Kweight = zeros(N,1); KKweight = zeros(N,1);
+    
+    % Grid search for aggregate uncertainty
     for time = 1:N
         randZ(time) = max([randZ(time) Zmin+0.000001]);
         randZ(time) = min([randZ(time) Zmax-0.000001]);
@@ -30,7 +43,7 @@ function [simvalue, sim_mu, simK, simKK] = simulate(randZ, muini, Ass, Kdot)
             munext = munow;
         else
             
-            % Calculate individual consumption, saving and coefficient wealth distribution)};
+            % Transition matrix
             Auu = Ass{Kup(time-1), Zup(time-1)}; Aud = Ass{Kup(time-1), Zdown(time-1)};
             Adu = Ass{Kdown(time-1), Zup(time-1)}; Add = Ass{Kdown(time-1), Zdown(time-1)};
             
@@ -51,15 +64,19 @@ function [simvalue, sim_mu, simK, simKK] = simulate(randZ, muini, Ass, Kdot)
             Mdd = Mdd/(sum(Mdd*da));
             Nextdd = reshape(Mdd,inta,intx);
             
-            munext = (1 - kweight) * (1 - zweight(time - 1)) * Nextuu + (1 - kweight) * zweight(time - 1) * Nextud + kweight * (1 - zweight(time - 1)) * Nextdu + kweight * zweight(time - 1) * Nextdd;
+            % The wealth distribution is calculated by linear interpolation with respect to aggregate capital and aggregate productivity.
+            munext = (1 - Kweight) * (1 - zweight(time - 1)) * Nextuu + (1 - Kweight) * zweight(time - 1) * Nextud + Kweight * (1 - zweight(time - 1)) * Nextdu + Kweight * zweight(time - 1) * Nextdd;
         end
         
+        % simK is simulated results using the dynamics of aggregate capital and the HJB equation
         simK(time) = sum(munext' * grida * da);
         simK(time) = max([simK(time) Kmin+0.000001]);
         simK(time) = min([simK(time) Kmax-0.000001]);
+        
+        % Grid search for aggregate capital
         Kdown(time) = floor((simK(time) - Kmin)/dK) + 1;
         Kup(time) = ceil((simK(time) - Kmin)/dK) + 1;
-        kweight = (gridK(Kup(time)) - simK(time))/dK;
+        Kweight = (gridK(Kup(time)) - simK(time))/dK;
         
         munow = munext;
         
@@ -68,30 +85,28 @@ function [simvalue, sim_mu, simK, simKK] = simulate(randZ, muini, Ass, Kdot)
             Know = sum(muini'*grida*da);
             Knew = Know;
          else
-         
+            % Calculate law of motion
             KKuu = Kdot(KKup(time-1), Zup(time-1));
             KKud = Kdot(KKup(time-1), Zdown(time-1));
             KKdu = Kdot(KKdown(time-1), Zup(time-1));
             KKdd = Kdot(KKdown(time-1), Zdown(time-1));
             
-            KK = (1 - Kweight) * (1 - zweight(time - 1)) * KKuu + (1 - Kweight) * zweight(time - 1) * KKud + Kweight * (1 - zweight(time - 1)) * KKdu + Kweight * zweight(time - 1) * KKdd;
+            % The law of motion is calculated by linear interpolation with respect to aggregate capital and aggregate productivity.
+            KK = (1 - KKweight) * (1 - zweight(time - 1)) * KKuu + (1 - KKweight) * zweight(time - 1) * KKud + KKweight * (1 - zweight(time - 1)) * KKdu + KKweight * zweight(time - 1) * KKdd;
             Knew = Know + KK*dT;
          end
             
-            simKK(time) = Knew;
-            simKK(time) = max([simKK(time) Kmin+0.000001]);
-            simKK(time) = min([simKK(time) Kmax-0.000001]);
-            
-            KKdown(time) = floor((simKK(time) - Kmin)/dK) + 1;
-            KKup(time) = ceil((simKK(time) - Kmin)/dK) + 1;
-            Kweight = (gridK(KKup(time)) - simKK(time))/dK;
-            Know = Knew;
+        % simKK is simulated results using the dynamics of aggregate capital
+        simKK(time) = Knew;
+        simKK(time) = max([simKK(time) Kmin+0.000001]);
+        simKK(time) = min([simKK(time) Kmax-0.000001]);
+        
+        % Grid search for aggregate capital
+        KKdown(time) = floor((simKK(time) - Kmin)/dK) + 1;
+        KKup(time) = ceil((simKK(time) - Kmin)/dK) + 1;
+        KKweight = (gridK(KKup(time)) - simKK(time))/dK;
+        Know = Knew;
     end
-    
-    simvalue = zeros(3,1);
-    simvalue(1,1) = simK(end);
-    simvalue(2,1) = simKK(end);
-    simvalue(3,1) = randZ(end);
     
     sim_mu = munext;
 end

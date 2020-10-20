@@ -1,8 +1,37 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% "Applying the Explicit Aggregation Algorithm to Heterogeneous Agent Models in Continuous Time."
+% By Masakazu Emoto and Takeki Sunakawa
+% This code calculates deterministic steady state
+% This code is refered by Achdou et al.(2017 NBER)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Masakazu EMOTO @ Kobe univerisity 2020/10/22 
+% Address : masakazu.emoto@gmail.com
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Algorithm 
+% Step 0 : Initial guess
+% Step 1 : Calculates deterministic steady state
+% Step 1-1 : Value function iteration by finite differencial method
+% Step 1-2 : Calculates the stationary distribution
+% Step 1-3 : Checks the stationary equilibrium condition
+% Step 2 : Calculates values at the steady state
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 function [rds, wds, Kds, Ads, uds, cds, pds, ids, Vds, gds, X, Y ,Z] = steadystate()
 
     global gamma rho alpha delta la intx x com tau LAve 
     global maxit maxitK crit critK Delta damp
     global inta amin amax grida da aa aaa xx xxx Aswitch
+    
+    %--------------------------------------------------%
+    % Step 0 : Initial guess
+    %--------------------------------------------------%
+    % Initial Guess
+    r = 0.005; rmax = rho; rmin = 0.0001;
+    K = (((alpha) / (r + delta)) ^ (1 / (1 - alpha))) * LAve;
+    w = (1 - alpha) * (K ^ alpha) * ((LAve) ^ (-alpha));
     
     %Finite difference approximation of the partial derivatives
     Vaf = zeros(inta,intx); Vab = zeros(inta,intx);
@@ -10,19 +39,7 @@ function [rds, wds, Kds, Ads, uds, cds, pds, ids, Vds, gds, X, Y ,Z] = steadysta
     % Consumption
     c = zeros(inta,intx);
     
-    %--------------------------------------------------%
-    % Initial guess for variable
-%     Villaverde's version
-%     K = 3.69; 
-%     r = alpha * K^(alpha - 1) - delta;
-%     w = (1 - alpha) * K^alpha; 
-    
-    r = 0.005; rmax = rho; rmin = 0.0001;
-    K = (((alpha) / (r + delta)) ^ (1 / (1 - alpha))) * LAve;
-    w = (1 - alpha) * (K ^ alpha) * ((LAve) ^ (-alpha));
-    
-%     v0(:,1) = (w * (1 - tau).* x(1) + w * com.* (1 - x(1)) + r.*grida).^(1-gamma)/(1-gamma)/rho;
-%     v0(:,2) = (w * (1 - tau).* x(2) + w * com.* (1 - x(2)) + r.*grida).^(1-gamma)/(1-gamma)/rho;
+    % Initial guess for value function
     if gamma == 1
         v0(:,1) = log((w * (1 - tau).* x(1) + w * com.* (1 - x(1)) + r.*grida))/rho;
         v0(:,2) = log((w * (1 - tau).* x(2) + w * com.* (1 - x(2)) + r.*grida))/rho;
@@ -32,14 +49,18 @@ function [rds, wds, Kds, Ads, uds, cds, pds, ids, Vds, gds, X, Y ,Z] = steadysta
     end
     v = v0;
 
-    %-----------------------------------------------------
-    %% MAIN LOOP %%
+    %--------------------------------------------------%
+    % Step 1 : Calculate deterministic steady state
+    %--------------------------------------------------%
     for iter=1:maxitK
     disp('Main loop iteration')
     disp(iter)
-
-        %% HAMILTON-JACOBI-BELLMAN EQUATION %%
+    
+        %--------------------------------------------------%
+        % Step 1-1 : Value function iteration by finite differencial method
+        %--------------------------------------------------%
         for n = 1:maxit
+        
             V = v;
 
             % Forward Difference
@@ -64,9 +85,9 @@ function [rds, wds, Kds, Ads, uds, cds, pds, ids, Vds, gds, X, Y ,Z] = steadysta
 
             % dV_upwind makes a choice of forward or backward differences based on
             % the sign of the drift
-            If = sf > 0; %positive drift --> forward difference
-            Ib = sb < 0; %negative drift --> backward difference
-            I0 = (1 - If - Ib); %at steady state
+            If = sf > 0;                % Positive drift --> Forward difference
+            Ib = sb < 0;              % Negative drift --> Backward difference
+            I0 = (1 - If - Ib);       % Drift is zero --> At steady state
 
             Va_Upwind = Vaf.*If + Vab.*Ib + Va0.*I0; %important to include third term
 
@@ -76,7 +97,8 @@ function [rds, wds, Kds, Ads, uds, cds, pds, ids, Vds, gds, X, Y ,Z] = steadysta
             else
                 u = (c.^(1-gamma) )/(1-gamma);
             end
-
+            
+            % Construct sparse matrix for individual wealth
             X = -min(sb,0)/da;
             Y = -max(sf,0)/da + min(sb,0)/da;
             Z = max(sf,0)/da;
@@ -106,9 +128,10 @@ function [rds, wds, Kds, Ads, uds, cds, pds, ids, Vds, gds, X, Y ,Z] = steadysta
                 break
             end
         end
-%         toc;
 
-        %% Calculate FOKKER-PLANCK EQUATION %%
+        %--------------------------------------------------%
+        % Step 1-2 : Calculates the stationary distribution
+        %--------------------------------------------------%
         AT = Ads';
         b = zeros(inta*intx,1);
 
@@ -122,15 +145,15 @@ function [rds, wds, Kds, Ads, uds, cds, pds, ids, Vds, gds, X, Y ,Z] = steadysta
         gg = AT\b;
         g_sum = gg'*ones(inta*intx,1)*da;
         gg = gg./g_sum;
-
         g = reshape(gg,inta,intx);
-%         g = [gg(1:inta), gg(inta + 1:inta * intx)];
 
+        %--------------------------------------------------%
+        % Step 1-3 : Checks the stationary equilibrium condition
+        %--------------------------------------------------%
         % Update aggregate capital and Check Labor Supply
-%         S = sum(g'*grida*da);
         S =sum(sum(aa .* g * da)); 
        
-        % Excess supplyfor capital markets
+        % Excess supply for capital markets
         Ex(iter) = S - K;
        
         if Ex(iter) > critK 
@@ -148,47 +171,22 @@ function [rds, wds, Kds, Ads, uds, cds, pds, ids, Vds, gds, X, Y ,Z] = steadysta
         end
         
         % Update Capital
-            K = (((alpha) / (r + delta)) ^ (1 / (1 - alpha))) * LAve;
-            w = (1 - alpha) * (K ^ alpha) * ((LAve) ^ (-alpha));
-            
-            if gamma == 1
-                v0(:,1) = log((w * (1 - tau).* x(1) + w * com.* (1 - x(1)) + r.*grida))/rho;
-                v0(:,2) = log((w * (1 - tau).* x(2) + w * com.* (1 - x(2)) + r.*grida))/rho;
-            else
-                v0(:,1) = (w * (1 - tau).* x(1) + w * com.* (1 - x(1)) + r.*grida).^(1-gamma)/(1-gamma)/rho;
-                v0(:,2) = (w * (1 - tau).* x(2) + w * com.* (1 - x(2)) + r.*grida).^(1-gamma)/(1-gamma)/rho;
-            end
-            v = v0;
-            
-        
-%         if abs(S - K) < critK
-%             disp('Steady State Found')
-%             break
-%         else
-%             epsilon = abs(S - K);          
-%             
-%             %% Update prices and Transfer
-%             % Update Capital
-%             K = (1 - damp) * K + damp * S;           %relaxation algorithm (to ensure convergence)
-% 
-%             % Factor Price
-%             r = alpha * K^(alpha - 1) * LAve^(1 - alpha)- delta; 
-%             w = (1 - alpha) * K^(alpha) * LAve^(-alpha);
-%             
-%             v0(:,1) = (w * (1 - tau).* x(1) + w * com.* (1 - x(1)) + r.*grida).^(1-gamma)/(1-gamma)/rho;
-%             v0(:,2) = (w * (1 - tau).* x(2) + w * com.* (1 - x(2)) + r.*grida).^(1-gamma)/(1-gamma)/rho;
-% 
-%             v = v0;
-%             
-%             disp('Aggregate Capital')
-%             disp(K)
-%             disp('Supply Capital')
-%             disp(S)
-%             disp('Epsilon')
-%             disp(epsilon)
-%         end
+        K = (((alpha) / (r + delta)) ^ (1 / (1 - alpha))) * LAve;
+        w = (1 - alpha) * (K ^ alpha) * ((LAve) ^ (-alpha));
+
+        if gamma == 1
+            v0(:,1) = log((w * (1 - tau).* x(1) + w * com.* (1 - x(1)) + r.*grida))/rho;
+            v0(:,2) = log((w * (1 - tau).* x(2) + w * com.* (1 - x(2)) + r.*grida))/rho;
+        else
+            v0(:,1) = (w * (1 - tau).* x(1) + w * com.* (1 - x(1)) + r.*grida).^(1-gamma)/(1-gamma)/rho;
+            v0(:,2) = (w * (1 - tau).* x(2) + w * com.* (1 - x(2)) + r.*grida).^(1-gamma)/(1-gamma)/rho;
+        end
+        v = v0;
     end
     
+    %--------------------------------------------------%
+    % Step 2 : Calculates values at the steady state
+    %--------------------------------------------------%
     % Value at deterministic steady state
     rds = r;
     Kds = (((alpha) / (rds + delta)) ^ (1 / (1 - alpha))) * LAve;
@@ -196,11 +194,4 @@ function [rds, wds, Kds, Ads, uds, cds, pds, ids, Vds, gds, X, Y ,Z] = steadysta
     cds = c; uds = u; Vds = V; gds = g; 
     pds = wds * (1 - tau).* xx + wds * com.* (1 - xx)  + rds.*aa - c;
     ids = sum((reshape(pds, inta*intx, 1) .* gg)'*da);
-    
-%     Kds = K;
-%     rds = alpha * Kds^(alpha - 1) * LAve^(1 - alpha) - delta; 
-%     wds = (1 - alpha) * Kds^(alpha) * LAve^(-alpha); 
-%     cds = c; uds = u; Vds = V; gds = g; 
-%     pds = wds * (1 - tau).* xx + wds * com.* (1 - xx)  + rds.*aa - c;
-%     ids = sum((reshape(pds, inta*intx, 1) .* gg)'*da);
 end
