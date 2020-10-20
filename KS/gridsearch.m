@@ -1,7 +1,11 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Grid Search
-% Masakazu Emoto @ Kobe-University
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% "Applying the Explicit Aggregation Algorithm to Heterogeneous Agent Models in Continuous Time."
+% By Masakazu Emoto and Takeki Sunakawa
+% This code is for finding the grid
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Masakazu EMOTO @ Kobe univerisity 2020/10/22 
+% Address : masakazu.emoto@gmail.com
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function ix = gridsearch(x0, xgrid)
 

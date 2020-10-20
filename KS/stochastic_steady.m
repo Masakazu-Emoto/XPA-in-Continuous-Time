@@ -1,4 +1,14 @@
-function [simvalue, sim_mu, Kss, KKss] = stochastic_steady(randZ, muini, Ass, Kdot)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% "Applying the Explicit Aggregation Algorithm to Heterogeneous Agent Models in Continuous Time."
+% By Masakazu Emoto and Takeki Sunakawa
+% This code calculates stochastic steady state
+% This code is refered by Villaverde's code (2019 NBER)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Masakazu EMOTO @ Kobe univerisity 2020/10/22 
+% Address : masakazu.emoto@gmail.com
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [ss_mu, Kss, KKss] = stochastic_steady(randZ, muini, Ass, Kdot)
     
     global gamma rho alpha delta la intx x mu sigma com tau LAve 
     global maxit maxitK crit critK Delta damp
@@ -8,15 +18,14 @@ function [simvalue, sim_mu, Kss, KKss] = stochastic_steady(randZ, muini, Ass, Kd
     global T N vtime dT
     global a4 x4 K4 Z4
     
-    %%%%%%%%%% 
-    % This code is to calculate the stochastic steady state 
-    % This code is refered by Villaverde's code
-    %%%%%%%%%% 
+    % TFP is zero at stochastic steady state
     if randZ ~= Zmean
         disp('Stop Calculate !')
         stop
     end
     munow = muini;
+    
+    % Container
     Kss = zeros(N,1); KKss = zeros(N,1);
 
     for time = 1:N
@@ -30,9 +39,11 @@ function [simvalue, sim_mu, Kss, KKss] = stochastic_steady(randZ, muini, Ass, Kd
         if time == 1
             munext = munow;
         else
-            % Calculate individual consumption, saving and coefficient wealth distribution
+            
+            % Transition matrix
             Aup = Ass{ss_up,iz}; Adown = Ass{ss_down,iz};
-
+            
+            % Calculate wealth distribution
             Mup = (speye(inta*intx) - Aup'*dT);
             Mup = Mup\munow(:);
             Next_up = Mup/(sum(Mup*da));
@@ -42,20 +53,22 @@ function [simvalue, sim_mu, Kss, KKss] = stochastic_steady(randZ, muini, Ass, Kd
             Mdown = Mdown\munow(:);
             Next_down = Mdown/(sum(Mdown*da));
             Next_down = reshape(Next_down,inta,intx);
-
+            
+            % The wealth distribution is calculated by linear interpolation with respect to aggregate capital
             munext = kweight * Next_down + (1 - kweight) * Next_up;
         end
         
         Kss(time) = sum(munext'*grida*da);
         Kss(time) = max([Kss(time) Kmin+0.000001]);
         Kss(time) = min([Kss(time) Kmax-0.000001]);
+        
+        % Grid search for aggregate capital
         ss_down = floor((Kss(time) - Kmin)/dK) + 1;
         ss_up= ceil((Kss(time) - Kmin)/dK) + 1;
         kweight = (gridK(ss_up) - Kss(time))/dK;
         
         munow = munext;
         
-        % Calculate for Den Haan Error
         if time == 1
             Know = sum(muini'*grida*da);
             Knew = Know;
@@ -70,10 +83,5 @@ function [simvalue, sim_mu, Kss, KKss] = stochastic_steady(randZ, muini, Ass, Kd
             KKss(time) = Knew;
     end
     
-    simvalue = zeros(3,1);
-    simvalue(1,1) = Kss(end);
-    simvalue(2,1) = KKss(end);
-    simvalue(3,1) = Zmean;
-    
-    sim_mu = munext;
+    ss_mu = munext;
 end
