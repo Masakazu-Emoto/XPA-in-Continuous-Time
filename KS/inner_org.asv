@@ -113,10 +113,10 @@ function [A1, A1tilde, A3, vss, cs, ps, zx, zy, zz] = inner_org(Kdot, vss, r, w)
         % FVHN Algorithm
         % -------------------------------------------------- % 
         % Construct sparse matrix
-%         elem_a       = -min(sb,0)/da; %(-sb.*Iab)/da;
-%         elem_e       = max(sf,0)/da; %( sf.*Iaf)/da;
-%         elem_b       = -max(sf,0)/da+min(sb,0)/da - PLM/dK - mu*(Zmean-quadZ)/dZ - ((sigma/dZ)^2); %-elem_a-elem_e - PLM/dK - mu*(Zmean-quadZ)/dZ - ((sigma/dZ)^2);
-%         elem_btilde  = -max(sf,0)/da+min(sb,0)/da; %-elem_a-elem_e; % for A1tilde matrix
+        elem_a       = -min(sb,0)/da; %(-sb.*Iab)/da;
+        elem_e       = max(sf,0)/da; %( sf.*Iaf)/da;
+        elem_b       = -elem_a-elem_e - PLM/dK - mu*(Zmean-quadZ)/dZ - ((sigma/dZ)^2);
+        elem_btilde  = -elem_a-elem_e; % for A1tilde matrix
         elem_a       = (-sb.*Iab)/da;
         elem_e       = ( sf.*Iaf)/da;
         elem_b       = -elem_a-elem_e - PLM/dK - mu*(Zmean-quadZ)/dZ - ((sigma/dZ)^2);
@@ -220,36 +220,36 @@ function [A1, A1tilde, A3, vss, cs, ps, zx, zy, zz] = inner_org(Kdot, vss, r, w)
     end
 
     % Maybe redundant - cs and ps are already obtained
-    % -------------------------------------------------- %
-    % Step 6 : Calculate Consumption function and Policy function
-    % -------------------------------------------------- %
-    % Forward difference : Indivudual wealth
-    Vsaf(1:inta-1,:,:,:) = (Vss(2:inta,:,:,:)-Vss(1:inta-1,:,:,:))/da;
-    Vsaf(inta,:,:,:) = (w(inta,:,:,:) * (1 - tau).*quadx(inta,:,:,:) + w(inta,:,:,:) * com.*(1 - quadx(inta,:,:,:))+ r(inta,:,:,:).*amax).^(-gamma);
-
-    % Backward difference : Individual wealth
-    Vsab(2:inta,:,:,:) = (Vss(2:inta,:,:,:)-Vss(1:inta-1,:,:,:))/da;
-    Vsab(1,:,:,:) = (w(1,:,:,:) * (1 - tau).*quadx(1,:,:,:) + w(inta,:,:,:) * com.*(1 - quadx(1,:,:,:)) + r(1,:,:,:).*amin).^(-gamma);
-    
-    % Consumption and savings with forward difference
-    cf = (Vsaf).^(-1/gamma); 
-    sf = w * (1 - tau).*quadx + w * com.*(1 - quadx) + r.*quada - cf;
-
-    % Consumption and savings with backward difference
-    cb = (Vsab).^(-1/gamma);
-    sb = w * (1 - tau).*quadx + w * com.*(1 - quadx) + r.*quada - cb;
-
-    % Consumption and derivative of value function at steady state
-    c0 = w * (1 - tau).*quadx + w * com.*(1 - quadx) + r.*quada;
-    Va0 = c0.^(-gamma);
-
-    % dV_upwind makes a choice of forward or backward differences based on
-    % The sign of the drift for individual wealth
-    Iaf = (sf > 0);             % Positive drift --> Forward difference
-    Iab = (sb < 0);           % Negative drift --> Backward difference
-    Ia0 = (1 - Iaf - Iab);   % % Drift is zero --> At steady state
-
-    Va_Upwind = Vsaf.*Iaf + Vsab.*Iab + Va0.*Ia0;
-    cs = (Va_Upwind).^(-1/gamma); ps = w * (1 - tau).*quadx + w * com.*(1 - quadx) + r.*quada - cs;
+%     % -------------------------------------------------- %
+%     % Step 6 : Calculate Consumption function and Policy function
+%     % -------------------------------------------------- %
+%     % Forward difference : Indivudual wealth
+%     Vsaf(1:inta-1,:,:,:) = (Vss(2:inta,:,:,:)-Vss(1:inta-1,:,:,:))/da;
+%     Vsaf(inta,:,:,:) = (w(inta,:,:,:) * (1 - tau).*quadx(inta,:,:,:) + w(inta,:,:,:) * com.*(1 - quadx(inta,:,:,:))+ r(inta,:,:,:).*amax).^(-gamma);
+% 
+%     % Backward difference : Individual wealth
+%     Vsab(2:inta,:,:,:) = (Vss(2:inta,:,:,:)-Vss(1:inta-1,:,:,:))/da;
+%     Vsab(1,:,:,:) = (w(1,:,:,:) * (1 - tau).*quadx(1,:,:,:) + w(inta,:,:,:) * com.*(1 - quadx(1,:,:,:)) + r(1,:,:,:).*amin).^(-gamma);
+%     
+%     % Consumption and savings with forward difference
+%     cf = (Vsaf).^(-1/gamma); 
+%     sf = w * (1 - tau).*quadx + w * com.*(1 - quadx) + r.*quada - cf;
+% 
+%     % Consumption and savings with backward difference
+%     cb = (Vsab).^(-1/gamma);
+%     sb = w * (1 - tau).*quadx + w * com.*(1 - quadx) + r.*quada - cb;
+% 
+%     % Consumption and derivative of value function at steady state
+%     c0 = w * (1 - tau).*quadx + w * com.*(1 - quadx) + r.*quada;
+%     Va0 = c0.^(-gamma);
+% 
+%     % dV_upwind makes a choice of forward or backward differences based on
+%     % The sign of the drift for individual wealth
+%     Iaf = (sf > 0);             % Positive drift --> Forward difference
+%     Iab = (sb < 0);           % Negative drift --> Backward difference
+%     Ia0 = (1 - Iaf - Iab);   % % Drift is zero --> At steady state
+% 
+%     Va_Upwind = Vsaf.*Iaf + Vsab.*Iab + Va0.*Ia0;
+%     cs = (Va_Upwind).^(-1/gamma); ps = w * (1 - tau).*quadx + w * com.*(1 - quadx) + r.*quada - cs;
     
 end

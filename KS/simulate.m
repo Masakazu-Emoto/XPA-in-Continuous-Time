@@ -1,14 +1,5 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% "Applying the Explicit Aggregation Algorithm to Heterogeneous Agent Models in Continuous Time."
-% By Masakazu Emoto and Takeki Sunakawa
-% This code simulates and derives the path of aggregate capital
-% This code is refered by Villaverde's code (2019 NBER)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Masakazu EMOTO @ Kobe univerisity 2020/10/22 
-% Address : masakazu.emoto@gmail.com
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-function [sim_mu, simK, simKK] = simulate(randZ, muini, Ass, Kdot)
+function [sim_mu, simK, simKK] = simulate_v1(randZ, muini, Ass, Kdot)
+%% simulate_v1.m : This code simulates the complete path of the distribution given the shock, to estimate the forecasting rule
 
     global gamma rho alpha delta la intx x mu sigma com tau LAve 
     global maxit maxitK crit critK Delta damp

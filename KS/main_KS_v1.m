@@ -1,5 +1,5 @@
-% main_KS.m : This code solves the Krusell and Smith model in continuous time by KS Algorithm
-
+%% main_KS.m : This code solves the Krusell and Smith model in continuous time by KS Algorithm
+%
 % Masakazu Emoto and Takeki Sunakawa (2021)
 % "Applying the Explicit Aggregation Algorithm to Heterogeneous Agent Models in Continuous Time"
 %
@@ -7,7 +7,7 @@
 % "Solving the Krusell-Smith (1998) model"
 %
 % The original code is downloaded from https://github.com/jesusfv/financial-frictions/tree/master/KS_LR
-
+%
 % Author : Masakazu EMOTO @ Kobe univerisity 2020/10/22 
 % Revised by Takeki Sunakawa 2021/01/05
 % E-mail address : masakazu.emoto@gmail.com
@@ -32,78 +32,12 @@ clc; tic;
 
 %% -------------------------------------------------- %
 %% Step 0 : Set Parameters
-% -------------------------------------------------- %
-global gamma rho alpha delta la intx x mu sigma com tau LAve 
-global maxit maxitK crit critK Delta damp relax
-
-% Preference
-gamma = 1;        % Coefficient of relative risk aversion
-rho = 0.01;       % Discount rate
-
-% Production
-alpha = 0.36;     % Capital share
-delta = 0.025;    % Depriciate rate
-
-% Idiosyncratic shock for labor productivity
-intx = 2;
-x1 = 0; x2 = 1;
-% Level of labor producticvity 
-% x(1): unemployed, x(2) : employed
-x = [x1, x2]; 
-
-% Transition probability for labor productivity 
-% lambda1 : unemployment -> employment
-% lambda2 : employment -> unemployment
-lambda1 = 0.5;                                         
-lambda2 = (lambda1 / (x(2) * 0.93 - x(1))*(x(2) - x(2) * 0.93));
-la = [lambda1, lambda2];
-
-% Aggregate shock for TFP (Ornstein-Uhlenbeck process)
-mu = 0.25;        % Mean
-sigma = 0.05;     % Variance 
-
-% Tax system (Ahn et al.(2018))
-com = 0.15; 
-tau = (com / x(2)) * (la(2) / la(1));
-
-% Average labour supply
-LAve = (la(1) * x(2) + la(2) * x(1)) / (la(1) + la(2));
-
-% PARAMETERS : We refer FVHN for the convergence criterion
-maxit  = 100;     % maximum number of iterations in the inner loop
-maxitK = 100;     % maximum number of iterations in the outer loop
-crit = 1e-6;      % criterion for the inner loop
-critK = 1e-5;     % criterion for the outer loop
-Delta = 1000;     % delta in HJB algorithm
-damp = 0.001;     % relaxation parameter for the deterministic steady state
-relax = 0.7;      % relaxation parameter for the law of motion
-relax_dot = 0.3;  % Initial weight in the relaxation algorithm for PLM convergence
-relax1 = 0.9;     % reduction of the weight in the relaxation algorithm : wePLM = wePLM*wePLM1+wePLM2
-relax2 = 0.005;   
-
-% -------------------------------------------------- %
-% Set grid
-% -------------------------------------------------- %
-% Individual wealth grid
-global inta amin amax grida da aa aaa xx xxx Aswitch
-
-inta = 100; amin = 0; amax = 100;
-grida = linspace(amin,amax,inta)';
-da = (amax - amin) / (inta - 1);
-aa = [grida,grida];
-aaa = reshape(aa,2*inta,1);
-
-% Labor productivity grid
-xx = ones(inta,1) * x;
-xxx = reshape(xx,2*inta,1);
-
-% Idiosyncratic shocks for labor productivity
-Aswitch = [-speye(inta) * la(1), speye(inta) * la(1); speye(inta) * la(2), -speye(inta) * la(2)];
+%% -------------------------------------------------- %
+parameters;
 
 %% -------------------------------------------------- %
 %% Step 1 : Solve for the deterministic steady state
-% -------------------------------------------------- %
-
+%% -------------------------------------------------- %
 % Calculate deterministic steady state
 disp('Calcutating deterinistic steady state')
 [rds, wds, Kds, Ads, uds, cds, pds, ids, Vds, gds] = steadystate();
@@ -113,15 +47,6 @@ disp('Deterministic steady state')
 disp(Kds) 
 disp(sum(gds'*grida*da))
 
-% Set aggregate wealth and productivity grid, based on the deterministic
-% steady state
-global Kmax Kmin intK intKK gridK dK
-global Zmax Zmin Zmean intZ zmu zsigma gridZ dZ ddZ
-
-% COMMENT : What is the optimum number of grids?
-intK = 3;
-intZ = 3; 
-
 % Set the grid around the deterministic steady state of K
 if sigma >= 0.03
     Kmax = 1.15*Kds; Kmin = 0.85*Kds; %intK = 3;
@@ -130,18 +55,9 @@ else
 end
 gridK = linspace(Kmin,Kmax,intK)'; dK = (Kmax - Kmin)/(intK - 1);
 
-%Zmax = 2*sigma; Zmin = -2*sigma; intZ = 3; Zmean = 0;
-Zmax = 2*sigma; Zmin = -2*sigma; Zmean = 0;
-gridZ = linspace(Zmin,Zmax,intZ)'; dZ = (Zmax - Zmin)/(intZ - 1); ddZ = dZ^2;
-gridZ((intZ+1)/2,1) = Zmean;
-
-% Aggregate Shock Process
-zmu = mu.*(Zmean - gridZ); 
-zsigma = sigma^2.*ones(intZ,1);
-
 %% -------------------------------------------------- %
 %% Step 2 : KS algorithm
-% -------------------------------------------------- %
+%% -------------------------------------------------- %
 % Initial guess for the forecasting rule: the same as in FVHN
 % What are KKdot and PLM_visits???
 Kdot = zeros(intK,intZ); 
@@ -236,13 +152,13 @@ while (epsilon > epsmin)
     %% -------------------------------------------------- %
     %% Step 2-2 : Outer Loop (1), Simulate the path of aggregate capital
     %% -------------------------------------------------- %
-%    [Ksim, Zsim, Zdown, Zup, Kdown, Kup] = fokker_planck(Zshocks, muini, Bss);
+%    [Ksim, Zsim, Zdown, Zup, Kdown, Kup] = fokker_planck(Zshocks, muini, A1);
     [Ksim, Zsim, Kdown, Kup, Zdown, Zup] = fokker_planck_v1(Zshocks, muini, A1tilde);
     disp('Finished simulating aggregate capital')
     
     %% -------------------------------------------------- %
     %% Step 2-3 : Outer Loop (2), Solve for the forecasting rule by linear
-    % regression of simulated data
+    %% regression of simulated data
     %% -------------------------------------------------- %
     % linear regression
     Y = (Ksim(Dtime+1:Stime) - Ksim(Dtime:Stime-1))/dT; % dK(t): Growth rate of K at time t
@@ -287,13 +203,15 @@ while (epsilon > epsmin)
     end
     
     epsilon = max(max(abs(Kdot - Kdotnew)));
-    iteration = iteration + 1;
+%    iteration = iteration + 1;
     
     if epsilon > epsmin
 %        disp('Calculating the law of motion ...')
 %        disp([Y_R2, epsilon])
-        disp([iteration, epsilon, Y_R2])
+%        disp([iteration, epsilon, Y_R2])
+        fprintf("iter = %4d, diff = %5.6f, R2 = %5.6f\n",iteration, epsilon, Y_R2)
     end
+    iteration = iteration + 1;
     
     % Update law of motion
     % TS: Why do we do this?
@@ -331,6 +249,7 @@ end
 %% Step 4 : Simulate the model and calculate the Den Haan Error
 %% -------------------------------------------------- %
 disp('Simulating the model and Calculating Den Haan Error')
+% We refer to Ahn et al to calculate the Den Haan error
 N = 10000; 
 muini = gds; 
 Zsim = zeros(N,1); 
@@ -340,16 +259,16 @@ shock(1,1) = 0; % why ???
 mmu = -1 + mu;
 for time = 1:N-1
     if time == 1
-        Zsim(time+1) = (1 - mmu * dT)^(-1) * (Zmean + sigma * shock(time) * sqrt(dT)); % Ahn et al
+        Zsim(time+1) = (1 - mmu * dT)^(-1) * (Zmean + sigma * shock(time) * sqrt(dT));
     else
-        Zsim(time+1) = (1 - mmu * dT)^(-1) * (Zsim(time) + sigma * shock(time) * sqrt(dT)); % Ahn et al
+        Zsim(time+1) = (1 - mmu * dT)^(-1) * (Zsim(time) + sigma * shock(time) * sqrt(dT));
     end
 end
 simTFP = exp(Zsim);
 [sim_mu, KS_K, KS_KK] =  simulate_v1(Zsim, muini, A1tilde, Kdotnew);
 
 % KS_KK is simulated results using the forecasting rule only
-% KS_K is simulated results using the dynamics of aggregate capital and the HJB equation
+% KS_K is simulated results using the forecasting rule and the HJB equation
 Drop = 1000; 
 DH_Error = 100.0 * max(abs(log(KS_KK(Drop+1:end)) - log(KS_K(Drop+1:end))));
 DH_Mean = 100.0 * sum(abs(log(KS_KK(Drop+1:end)) - log(KS_K(Drop+1:end))))/(N - Drop);
@@ -366,7 +285,6 @@ toc;
 %% -------------------------------------------------- %
 %% Step 5 : Plot relevant graphs
 %% -------------------------------------------------- %
-
 % Plotting law of motion
 figure(1)
 surf(gridZ,gridK,Kdot);
