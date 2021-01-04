@@ -2,6 +2,10 @@
 % "Applying the Explicit Aggregation Algorithm to Heterogeneous Agent Models in Continuous Time."
 % By Masakazu Emoto and Takeki Sunakawa
 % This code modifies Ahn's GitHub code enables to calculate the Den Haan Error
+%% PLEASE CITE THE CODE AND PAPER!!!!!!!!!!!
+% Reference : Ann et al. (2018) "When inequality matters for macro and macro matters for inequality," NBER Macroeconomics Annual 32.1, 1-75.
+% The code is downloaded from https://github.com/gregkaplan/phact
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Masakazu EMOTO @ Kobe univerisity 2020/10/22 
 % Address : masakazu.emoto@gmail.com

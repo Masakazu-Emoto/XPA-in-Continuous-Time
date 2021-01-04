@@ -33,7 +33,7 @@ function [rds, wds, Kds, Ads, uds, cds, pds, ids, Vds, gds, X, Y ,Z] = steadysta
     K = (((alpha) / (r + delta)) ^ (1 / (1 - alpha))) * LAve;
     w = (1 - alpha) * (K ^ alpha) * ((LAve) ^ (-alpha));
     
-    %Finite difference approximation of the partial derivatives
+    % Finite difference approximation of the partial derivatives
     Vaf = zeros(inta,intx); Vab = zeros(inta,intx);
 
     % Consumption

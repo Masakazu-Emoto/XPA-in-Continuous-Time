@@ -111,14 +111,14 @@ global Zmax Zmin Zmean intZ zmu zsigma gridZ dZ ddZ
 
 % COMMENT : What is the optimum number of grids?
 if sigma >= 0.03
-    Kmax = 1.15*Kds; Kmin = 0.85*Kds; intK = 3;
+    Kmax = 1.15*Kds; Kmin = 0.85*Kds; intK = 5;
 else
-    Kmax = 1.05*Kds; Kmin = 0.95*Kds; intK = 3;
+    Kmax = 1.05*Kds; Kmin = 0.95*Kds; intK = 5;
 end
 gridK = linspace(Kmin,Kmax,intK)'; dK = (Kmax - Kmin)/(intK - 1);
 
 % COMMENT : What is the optimum number of grids?
-Zmax = 2*sigma; Zmin = -2*sigma; intZ = 3; Zmean = 0; 
+Zmax = 2*sigma; Zmin = -2*sigma; intZ = 5; Zmean = 0; 
 gridZ = linspace(Zmin,Zmax,intZ)'; dZ = (Zmax - Zmin)/(intZ - 1); ddZ = dZ^2;
 gridZ((intZ+1)/2,1) = Zmean;
 
@@ -188,7 +188,8 @@ while (epsilon > epsmin)
     % -------------------------------------------------- %
     % Step 3-1 : Inner Loop Taking as given the forecasting rule, calculating policy function
     % -------------------------------------------------- %
-    [Ass, Bss, WW, vss, cs, ps, zx, zy, zz]   = inner(Kdot, vss, iteration, r, w);
+   [Ass, Bss, WW, vss, cs, ps, zx, zy, zz]   = inner(Kdot, vss, iteration, r, w);
+%     [Ass, Bss, WW, vss, cs, ps, zx, zy, zz]   = inner_org(Kdot, vss, iteration, r, w);
     disp('Finished calculation HJB Equation')
     
     % -------------------------------------------------- %
