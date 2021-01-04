@@ -291,7 +291,8 @@ while (epsilon > epsmin)
     
     if epsilon > epsmin
 %        disp('Calculating the law of motion ...')
-        disp([Y_R2, epsilon])
+%        disp([Y_R2, epsilon])
+        disp([iteration, epsilon, Y_R2])
     end
     
     % Update law of motion
