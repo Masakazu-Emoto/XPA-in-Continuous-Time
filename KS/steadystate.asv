@@ -3,6 +3,14 @@ function [rds, wds, Kds, Ads, uds, cds, pds, ids, Vds, gds, X, Y, Z] = steadysta
 % Reference : Achdou et al. (2017 NBER)
 %% INPUTS : NA
 %% OUTPUTS : 
+% rds :
+% wds :
+% Kds :
+% Ads :
+% uds :
+% cds :
+% pds :
+% ids :
 
 %% Summary of the algorithm
 % Step 0 : Initial guesses
@@ -107,21 +115,20 @@ function [rds, wds, Kds, Ads, uds, cds, pds, ids, Vds, gds, X, Y, Z] = steadysta
             
             b = u_stacked + V_stacked/Delta;
 
-            V_stacked = B\b; % SOLVE SYSTEM OF EQUATIONS
+            V_stacked = B\b; %SOLVE SYSTEM OF EQUATIONS
             V = reshape(V_stacked,inta,intx);
 
             Vchange = V - v;
             v = V;
 
             dist(n) = max(max(abs(Vchange)));
-%             disp(max(max(abs(Vchange))))
+            disp(max(max(abs(Vchange))))
             if dist(n) < crit
-%                 disp('Value Function Converged, Iteration = ')
-%                 disp(n)
+                disp('Value Function Converged, Iteration = ')
+                disp(n)
                 break
             end
-            
-        end % Inner loop
+        end
 
         %--------------------------------------------------%
         % Step 1-2 : Calculates the stationary distribution
@@ -151,24 +158,23 @@ function [rds, wds, Kds, Ads, uds, cds, pds, ids, Vds, gds, X, Y, Z] = steadysta
         Ex(iter) = S - K;
        
         if Ex(iter) > critK 
-%             disp('Excess Supply')
+            disp('Excess Supply')
             rmax = r;
-            r = 0.5 * (r + rmin);
+            r = 0.5 * ( r + rmin);
         elseif Ex(iter) < -critK
-%             disp('Excess Demand')
+            disp('Excess Demand')
             rmin = r;
             r = 0.5 * (r + rmax);
         elseif abs(Ex(iter)) < critK
-%             disp('Steady state found')
-%             disp(r)
+            disp('Steady state found')
+            disp(r)
             break
         end
         
-        % Update Capital and wage based on r
+        % Update Capital
         K = (((alpha) / (r + delta)) ^ (1 / (1 - alpha))) * LAve;
         w = (1 - alpha) * (K ^ alpha) * ((LAve) ^ (-alpha));
 
-        % Initial guess for the value function for the next outer loop : needed???       
         if gamma == 1
             v0(:,1) = log((w * (1 - tau).* x(1) + w * com.* (1 - x(1)) + r.*grida))/rho;
             v0(:,2) = log((w * (1 - tau).* x(2) + w * com.* (1 - x(2)) + r.*grida))/rho;
@@ -177,13 +183,12 @@ function [rds, wds, Kds, Ads, uds, cds, pds, ids, Vds, gds, X, Y, Z] = steadysta
             v0(:,2) = (w * (1 - tau).* x(2) + w * com.* (1 - x(2)) + r.*grida).^(1-gamma)/(1-gamma)/rho;
         end
         v = v0;
-        
-    end % Outer loop
+    end
     
     %--------------------------------------------------%
     % Step 2 : Calculates values at the steady state
     %--------------------------------------------------%
-    % Values at the deterministic steady state
+    % Value at deterministic steady state
     rds = r;
     Kds = (((alpha) / (rds + delta)) ^ (1 / (1 - alpha))) * LAve;
     wds = (1 - alpha) * (Kds ^ alpha) * ((LAve) ^ (-alpha));

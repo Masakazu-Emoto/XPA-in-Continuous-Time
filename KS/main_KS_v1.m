@@ -25,7 +25,7 @@
 % regression of simulated data
 % (Step 3 : Solve for the stochastic steady state)
 % Step 4 : Simulate the model and calculate the Den Haan Error
-% Step 5 : Plot relevant graphs
+% Step 5 : Plot graphs
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -46,13 +46,14 @@ parameters;
 %% Step 1 : Solve for the deterministic steady state
 %% -------------------------------------------------- %
 % Calculate deterministic steady state
-disp('Calcutating deterinistic steady state')
+% tic;
+disp('Calcutating the deterinistic steady state')
 [rds, wds, Kds, Ads, uds, cds, pds, ids, Vds, gds] = steadystate();
-toc;
+% toc;
 
-disp('Deterministic steady state')
+% disp('Deterministic steady state')
 disp(Kds) 
-disp(sum(gds'*grida*da))
+% disp(sum(gds'*grida*da))
 
 % Set the grid around the deterministic steady state of K
 if sigma >= 0.03
@@ -65,19 +66,6 @@ gridK = linspace(Kmin,Kmax,intK)'; dK = (Kmax - Kmin)/(intK - 1);
 %% -------------------------------------------------- %
 %% Step 2 : KS algorithm
 %% -------------------------------------------------- %
-% Initial guess for the forecasting rule: the same as in FVHN
-% What are KKdot and PLM_visits???
-Kdot = zeros(intK,intZ); 
-%KKdot = zeros(intKK, intZ);
-%PLM_visits = zeros(intKK, intZ).*NaN; %rng(100);  
-
-% PLM = zeros(inta,intx,intK,intZ);
-% for ia = 1:inta
-%     for ix = 1:intx
-%         PLM(ia,ix,:,:) = Kdot(:,:);
-%     end
-% end
-
 % Resize grid
 global quada quadx quadK quadZ
 quada = zeros(inta,intx,intK,intZ);
@@ -117,6 +105,9 @@ for ia=1:inta
     end
 end
 
+% Initial guess for the forecasting rule: the same as in FVHN
+Kdot = zeros(intK,intZ); 
+
 % Initial guess of vss, r, and w for the inner loop (used in inner.m)
 r = alpha*quadK.^(alpha - 1).*LAve^(1 - alpha).*exp(quadZ) - delta;
 w = (1 - alpha)*quadK.^(alpha).*LAve^(-alpha).*exp(quadZ);
@@ -126,46 +117,34 @@ else
     vss = (w.*(1 - tau).*quadx + w.*com.*(1 - quadx) + r.*quada).^(1-gamma)/(1-gamma)/rho;
 end
 
-% Shock for Aggregate productivity
-global T N Stime Dtime vtime dT
-% the below is used in simulation.m
-T = 500;  % years
-N = 2000; % periods for simulation
-dT = T/N; % interval of time, = 0.25
-% the below is used in fokker_planck.m
-rng(100); 
-Stime = 1000; % the length of simulation 
-Dtime = 500; % the length of simulation discarded to estimate the PLM
-muini = gds; % stationary distribution from the deterministic steady state
-Zshocks = randn(Stime,1);
-% unused
-% vtime = linspace(0,T,N); % ?
+% Initial distribution from the deterministic steady state
+muini = gds;
 
 % Inner loop and outer loop
 disp('Calculating the inner and outer loops by KS algorithm')
 disp(' ')
-% Criteria for the algorithm
-epsmin = 1e-6; 
-epsilon = 1e+6; 
-iteration = 1; 
-
-while (epsilon > epsmin)
+for iteration=1:maxitK % Outer loop
+%while (epsilon > epsmin)
     %% -------------------------------------------------- %
     %% Step 2-1 : Inner Loop, Calculate the policy function by taking the forecasting rule (perceived law of motion) as given 
     %% -------------------------------------------------- %
+%     tic;
 %    [A1, A1tilde, A3, vss, cs, ps] = inner(Kdot, vss, iteration, r, w);
     [A1, A1tilde, A3, vss, cs, ps] = inner_v1(Kdot, vss, r, w, UpwindKZ);
-    disp('Finished solving the HJB Equation')
+    disp('  Finished solving the HJB Equation')
+%     toc;
     
     %% -------------------------------------------------- %
     %% Step 2-2 : Outer Loop (1), Simulate the path of aggregate capital
     %% -------------------------------------------------- %
+%     tic;
     if (KFEnoKZ)
         [Ksim, Zsim, Kdown, Kup, Zdown, Zup] = fokker_planck_v1(Zshocks, muini, A1tilde);
     else
         [Ksim, Zsim, Kdown, Kup, Zdown, Zup] = fokker_planck_v1(Zshocks, muini, A1);
     end
-    disp('Finished simulating aggregate capital')
+    disp('  Finished simulating aggregate capital')
+%     toc;
     
     %% -------------------------------------------------- %
     %% Step 2-3 : Outer Loop (2), Solve for the forecasting rule by linear
@@ -184,13 +163,12 @@ while (epsilon > epsmin)
     %X = [X0 X1 X2 X3];
     
 %    B = (X'*X)^-1*X'*Y;
-    B = (X'*X)\(X'*Y); % Coefficients for regression
+    B = (X'*X)\(X'*Y);
     Y_LR = X * B;
     Y_Stad = (mean(Y - Y_LR).^2).^0.5;
     Y_R2 = 1 - (sum((Y - Y_LR).^2))/(sum((Y - mean(Y)).^2));
     
-    % TS: Why do we use quadK and quadZ for updating Kdot???
-    % what are these???
+    % Use the coefficients to calculate the forecasting rule on HJB grid
     X1mm = squeeze(quadK(1,1,:,:)) ;
     X2mm = squeeze(quadZ(1,1,:,:)) ;
 
@@ -203,49 +181,36 @@ while (epsilon > epsmin)
     X_LR = [X0m X1m X2m];
     %X_LR = [X0m X1m X2m X3m];
     
-    Kdotnew = X_LR*B; % B is obtained by the regression
+    Kdotnew = X_LR*B;
     Kdotnew = reshape(Kdotnew, size(Kdot)); % Same value ! ????????
     
-    if isreal(Kdotnew) ~= 1
+    if ~isreal(Kdotnew)
         disp('')
-        disp('The matrix for aggregate dynamics is not real')
+        disp('  The matrix for aggregate dynamics is not real')
         disp('')
         break
     end
     
     epsilon = max(max(abs(Kdot - Kdotnew)));
-%    iteration = iteration + 1;
     
-    if epsilon > epsmin
+    if epsilon > critK
+%    if epsilon > epsmin
 %        disp('Calculating the law of motion ...')
 %        disp([Y_R2, epsilon])
 %        disp([iteration, epsilon, Y_R2])
-        fprintf("iter = %4d, diff = %5.6f, R2 = %5.6f\n",iteration, epsilon, Y_R2)
+        fprintf("  iter = %4d, diff = %5.6f, R2 = %5.6f\n",iteration, epsilon, Y_R2)
+    else
+        break;
     end
-    iteration = iteration + 1;
     
     % Update law of motion
     % TS: Why do we do this?
     Kdot = (1 - relax_dot) * Kdot + relax_dot * Kdotnew;
     relax_dot = relax_dot * relax1 + relax2;
-    
-    % TS: PLM is not used inside the loop
-%     for ia = 1:inta
-%         for ix = 1:intx
-%             PLM(ia,ix,:,:) = Kdot(:,:);
-%         end
-%     end
+
 end
 
 toc;
-
-% extract Kdot to PLM
-PLM = zeros(inta,intx,intK,intZ);
-for ia = 1:inta
-    for ix = 1:intx
-        PLM(ia,ix,:,:) = Kdot(:,:);
-    end
-end
 
 %% -------------------------------------------------- %
 %% Step 3 : Solve for the stochastic steady state
@@ -299,9 +264,8 @@ toc;
 % disp(Kss(end)) 
 
 %% -------------------------------------------------- %
-%% Step 5 : Plot relevant graphs
+%% Step 5 : Plot graphs
 %% -------------------------------------------------- %
-% Plotting law of motion
 figure(1)
 surf(gridZ,gridK,Kdot);
 title('The perceived law of motion, PLM : KS', 'interpreter','latex','FontSize',14);
@@ -309,8 +273,10 @@ xlabel('shock ($Z$)', 'interpreter','latex','FontSize',14);
 ylabel('capital ($K$)', 'interpreter','latex','FontSize',14);
 xlim([Zmin Zmax]); ylim([Kmin Kmax]);
 
-intKK = 16; gridKK = linspace(Kmin,Kmax,intKK)';
-intZZ = 41; gridZZ = linspace(Zmin, Zmax,intZZ)';
+intKK = 16; 
+intZZ = 41; 
+gridKK = linspace(Kmin,Kmax,intKK)';
+gridZZ = linspace(Zmin, Zmax,intZZ)';
 LOM = interp1(gridK,Kdot,gridKK,'spline');
 LOM = interp1(gridZ,LOM',gridZZ,'spline');
 
@@ -326,7 +292,7 @@ xlim([Zmin Zmax]); ylim([Kmin Kmax]);
 figure(3)
 spy(A3,'b');    
 
-% Plot Transition Dynamics DSS to SSS
+% Plot Transition Dynamics from DSS to SSS
 % figure(4)
 % plot(Kss,'b-','LineWidth',1); grid;
 % hold on

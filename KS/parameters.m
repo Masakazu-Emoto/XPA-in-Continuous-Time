@@ -36,11 +36,11 @@ LAve = (la(1) * x(2) + la(2) * x(1)) / (la(1) + la(2));
 
 % PARAMETERS : We refer FVHN for the convergence criterion
 maxit  = 100;     % maximum number of iterations in the inner loop
-maxitK = 100;     % maximum number of iterations in the outer loop
+maxitK = 300;     % maximum number of iterations in the outer loop
 crit = 1e-6;      % criterion for the inner loop
 critK = 1e-5;     % criterion for the outer loop
 Delta = 1000;     % delta in HJB algorithm
-damp = 0.001;     % relaxation parameter for the deterministic steady state
+% damp = 0.001;     % relaxation parameter for the deterministic steady state
 relax = 0.7;      % relaxation parameter for the law of motion
 relax_dot = 0.3;  % Initial weight in the relaxation algorithm for PLM convergence
 relax1 = 0.9;     % reduction of the weight in the relaxation algorithm : wePLM = wePLM*wePLM1+wePLM2
@@ -81,3 +81,22 @@ gridZ((intZ+1)/2,1) = Zmean;
 % Aggregate Shock Process
 zmu = mu.*(Zmean - gridZ); 
 zsigma = sigma^2.*ones(intZ,1);
+
+% Shock for Aggregate productivity
+global T N Stime Dtime vtime dT
+% the below is used in simulation.m
+T = 500;  % years
+N = 2000; % periods for simulation
+dT = T/N; % interval of time, = 0.25
+% the below is used in fokker_planck.m
+rng(100); 
+Stime = 1000; % the length of simulation 
+Dtime = 500; % the length of simulation discarded to estimate the PLM
+Zshocks = randn(Stime,1);
+% unused
+% vtime = linspace(0,T,N); % ?
+
+% Criteria for the outer loop
+% epsmin = 1e-6; 
+% epsilon = 1e+6; 
+% iteration = 1; 

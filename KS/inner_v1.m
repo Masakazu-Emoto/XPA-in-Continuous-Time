@@ -1,5 +1,5 @@
 function [A1, A1tilde, A3, vss, cs, ps, zx, zy, zz] = inner_org(Kdot, vss, r, w, UpwindKZ)
-%% inner_org.m : This code solves the Hamilton-Jacobi-Bellman equation with aggregate uncertainty by the finite differential method
+%% inner_v1.m : This code solves the Hamilton-Jacobi-Bellman equation with aggregate uncertainty by the finite differential method
 %% INPUTS
 % Kdot      : the forecasting rule
 % vss       : the initial value function from the steady state
@@ -173,8 +173,8 @@ function [A1, A1tilde, A3, vss, cs, ps, zx, zy, zz] = inner_org(Kdot, vss, r, w,
         % Construct sparse matrix
 %         elem_a       = -min(sb,0)/da; %(-sb.*Iab)/da;
 %         elem_e       = max(sf,0)/da; %( sf.*Iaf)/da;
-%         elem_b       = -max(sf,0)/da+min(sb,0)/da - PLM/dK - mu*(Zmean-quadZ)/dZ - ((sigma/dZ)^2); %-elem_a-elem_e - PLM/dK - mu*(Zmean-quadZ)/dZ - ((sigma/dZ)^2);
-%         elem_btilde  = -max(sf,0)/da+min(sb,0)/da; %- PLM/dK - mu*(Zmean-quadZ)/dZ - ((sigma/dZ)^2); %-elem_a-elem_e - PLM/dK - mu*(Zmean-quadZ)/dZ - ((sigma/dZ)^2);
+%         elem_b       = -max(sf,0)/da+min(sb,0)/da - PLM/dK - mu*(Zmean-quadZ)/dZ - ((sigma/dZ)^2);
+%         elem_btilde  = -max(sf,0)/da+min(sb,0)/da;
         elem_a       = (-sb.*Iab)/da;
         elem_e       = ( sf.*Iaf)/da;
         elem_b       = -elem_a-elem_e - PLM/dK - mu*(Zmean-quadZ)/dZ - ((sigma/dZ)^2);
@@ -185,9 +185,6 @@ function [A1, A1tilde, A3, vss, cs, ps, zx, zy, zz] = inner_org(Kdot, vss, r, w,
         % Fill A1 collection
         for ik=1:intK
             for iz=1:intZ
-%                 A11          = spdiags(elem_b(:,1,ik,iz),0,inta,inta) + spdiags(elem_a(2:inta,1,ik,iz),-1,inta,inta) + spdiags([0;elem_e(1:inta-1,1,ik,iz)],1,inta,inta);
-%                 A12          = spdiags(elem_b(:,2,ik,iz),0,inta,inta) + spdiags(elem_a(2:inta,2,ik,iz),-1,inta,inta) + spdiags([0;elem_e(1:inta-1,2,ik,iz)],1,inta,inta);
-                %A1{ik,iz}    = [A11,sparse(inta, inta); sparse(inta, inta),A12] + Aswitch;
                 A11tilde       = spdiags(elem_btilde(:,1,ik,iz),0,inta,inta) + spdiags(elem_a(2:inta,1,ik,iz),-1,inta,inta) + spdiags([0;elem_e(1:inta-1,1,ik,iz)],1,inta,inta);
                 A12tilde       = spdiags(elem_btilde(:,2,ik,iz),0,inta,inta) + spdiags(elem_a(2:inta,2,ik,iz),-1,inta,inta) + spdiags([0;elem_e(1:inta-1,2,ik,iz)],1,inta,inta);
                 A1tilde{ik,iz} = [A11tilde,sparse(inta, inta); sparse(inta, inta),A12tilde] + Aswitch;
@@ -293,7 +290,6 @@ function [A1, A1tilde, A3, vss, cs, ps, zx, zy, zz] = inner_org(Kdot, vss, r, w,
         end
         
         %% -------------------------------------------------- %    
-        %% -------------------------------------------------- %    
         % Calculate BB and bb to find Vnew
         BB = (rho + 1/Delta) * speye(inta*intx*intK*intZ) - A3;
         u_stacked = uss(:); V_stacked = Vss(:);
@@ -363,13 +359,12 @@ function [A1, A1tilde, A3, vss, cs, ps, zx, zy, zz] = inner_org(Kdot, vss, r, w,
 %             disp(max(max(abs(HJB_check_stacked))))
             break
         end
-    end
+        
+    end % end of loop
 
-    % Maybe redundant - cs and ps are already obtained
-    % -------------------------------------------------- %
-    % Step 6 : Calculate Consumption function and Policy function
-    % -------------------------------------------------- %
-    % Forward difference : Indivudual wealth
+    % Calculate Consumption function and Policy function
+    % TS: Maybe redundant - cs and ps are already obtained
+    % Forward difference : Individual wealth
     Vsaf(1:inta-1,:,:,:) = (Vss(2:inta,:,:,:)-Vss(1:inta-1,:,:,:))/da;
     Vsaf(inta,:,:,:) = (w(inta,:,:,:) * (1 - tau).*quadx(inta,:,:,:) + w(inta,:,:,:) * com.*(1 - quadx(inta,:,:,:))+ r(inta,:,:,:).*amax).^(-gamma);
 
@@ -391,9 +386,9 @@ function [A1, A1tilde, A3, vss, cs, ps, zx, zy, zz] = inner_org(Kdot, vss, r, w,
 
     % dV_upwind makes a choice of forward or backward differences based on
     % The sign of the drift for individual wealth
-    Iaf = (sf > 0);             % Positive drift --> Forward difference
-    Iab = (sb < 0);           % Negative drift --> Backward difference
-    Ia0 = (1 - Iaf - Iab);   % % Drift is zero --> At steady state
+    Iaf = (sf > 0);         % Positive drift --> Forward difference
+    Iab = (sb < 0);         % Negative drift --> Backward difference
+    Ia0 = (1 - Iaf - Iab);  % Drift is zero --> At steady state
 
     Va_Upwind = Vsaf.*Iaf + Vsab.*Iab + Va0.*Ia0;
     cs = (Va_Upwind).^(-1/gamma); ps = w * (1 - tau).*quadx + w * com.*(1 - quadx) + r.*quada - cs;

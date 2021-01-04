@@ -12,7 +12,7 @@ function [Ksim, Zsim, Kdown, Kup, Zdown, Zup] = fokker_planck_v1(Zshocks, muini,
 % Zdown     : the downward closest point of Zgrid
 % Zup       : the upward closest point of Zgrid
 
-%% NOTE: This code is based on b5_KFE.m written by FVHN (2018).
+%% NOTE: This code is based on b5_KFE.m written by FVHN.
 
     global gamma rho alpha delta la intx x mu sigma com tau LAve 
     global maxit maxitK crit critK Delta damp
