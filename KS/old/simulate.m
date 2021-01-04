@@ -1,15 +1,5 @@
 function [sim_mu, simK, simKK] = simulate_v1(randZ, muini, Ass, Kdot)
 %% simulate_v1.m : This code simulates the complete path of the distribution given the shock, to estimate the forecasting rule
-%% INPUTS
-% randZ     : the exogenous aggregate shocks
-% muini     : the initial distribution from the steady state
-% Ass       : the transition matrix obtained in the inner loop
-% Kdot      : the forecasting rule
-%% OUTPUTS
-% sim_mu    : simulated distribution
-% simK      : simulated aggregate capital
-% simKK     : simulated aggregate capital using the forecasting rule only
-% (for the Den Haan error)
 
     global gamma rho alpha delta la intx x mu sigma com tau LAve 
     global maxit maxitK crit critK Delta damp
@@ -18,6 +8,7 @@ function [sim_mu, simK, simKK] = simulate_v1(randZ, muini, Ass, Kdot)
     global Zmax Zmin Zmean intZ zmu zsigma gridZ dZ ddZ
     global T N vtime dT
     
+    % Container
     simK = zeros(N,1); simKK = zeros(N,1); 
     
     Zup = zeros(N,1); Zdown = zeros(N,1);
@@ -26,28 +17,22 @@ function [sim_mu, simK, simKK] = simulate_v1(randZ, muini, Ass, Kdot)
     
     zweight = zeros(N,1); Kweight = zeros(N,1); KKweight = zeros(N,1);
     
+    % Grid search for aggregate uncertainty
     for time = 1:N
-        randZ(time)   = max([randZ(time) Zmin+0.000001]);
-        randZ(time)   = min([randZ(time) Zmax-0.000001]);
-        Zdown(time)   = floor((randZ(time) - Zmin)/dZ) + 1;
-        Zup(time)     = ceil((randZ(time) - Zmin)/dZ) + 1;
+        randZ(time) = max([randZ(time) Zmin+0.000001]);
+        randZ(time) = min([randZ(time) Zmax-0.000001]);
+        Zdown(time) = floor((randZ(time) - Zmin)/dZ) + 1;
+        Zup(time) = ceil((randZ(time) - Zmin)/dZ) + 1;
         zweight(time) = (gridZ(Zup(time)) - randZ(time))/dZ;
     end
         
-    %% MAIN LOOP
     munow = muini;
 
     for time = 1:N
         
         if time == 1
-            
             munext = munow;
-
         else
-            
-            % Interpolation step to compute next period's distribution
-            % The following block computes the transition g(t+1) =
-            % (I-A*dt)^(-1)*g(t) for the four closest grid points
             
             % Transition matrix
             Auu = Ass{Kup(time-1), Zup(time-1)}; Aud = Ass{Kup(time-1), Zdown(time-1)};
@@ -72,7 +57,6 @@ function [sim_mu, simK, simKK] = simulate_v1(randZ, muini, Ass, Kdot)
             
             % The wealth distribution is calculated by linear interpolation with respect to aggregate capital and aggregate productivity.
             munext = (1 - Kweight) * (1 - zweight(time - 1)) * Nextuu + (1 - Kweight) * zweight(time - 1) * Nextud + Kweight * (1 - zweight(time - 1)) * Nextdu + Kweight * zweight(time - 1) * Nextdd;
-            
         end
         
         % simK is simulated results using the dynamics of aggregate capital and the HJB equation

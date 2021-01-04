@@ -1,0 +1,39 @@
+Finished calculation HJB Equation
+Finished calculation Forecasting Rule
+Law of Motion calculating ...
+   0.998094447836064   0.000001091006384
+
+Value Function Converged
+Difference = 
+     2.960776157578948e-08
+
+Iteration = 
+     1
+
+HJB_check:
+     5.896283513523448e-10
+
+Finished calculation HJB Equation
+Finished calculation Forecasting Rule
+Law of Motion calculating ...
+   0.998094447798057   0.000001033131741
+
+Value Function Converged
+Difference = 
+     2.803842846788029e-08
+
+Iteration = 
+     1
+
+HJB_check:
+     5.584028951038933e-10
+
+Finished calculation HJB Equation
+Finished calculation Forecasting Rule
+経過時間は 153.651025 秒です。
+Simulating the model and Calculating Den Haan Error
+MAX Den Haan Error
+   0.943918425608592
+
+MEAN Den Haan Error
+   0.714852627685761

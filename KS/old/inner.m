@@ -19,41 +19,49 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [Ass, Bss, WW, vss, cs, ps, zx,zy, zz] = inner(Kdot, vss, iteration, r, w)
+% Kdot : the forecasting rule
+% vss : the initial value function
+% iteration ???
+% r : real rate
+% w : wage rate
 
     global gamma rho alpha delta la intx x mu sigma com tau LAve 
     global maxit maxitK crit critK Delta damp
     global inta amin amax grida da aa aaa xx xxx Aswitch
     global Kmax Kmin intK gridK dK
     global Zmax Zmin Zmean intZ zmu zsigma gridZ dZ ddZ
-    global  quada quadx quadK quadZ
+    global quada quadx quadK quadZ
     
-    %Finite difference approximation of the partial derivatives
+    % Finite difference approximation of the partial derivatives
     Vsaf = zeros(inta,intx,intK,intZ); Vsab = zeros(inta,intx,intK,intZ);
-    dVdK   = zeros(inta,intx,intK,intZ); dVdZ   = zeros(inta,intx,intK,intZ); 
+    dVdK = zeros(inta,intx,intK,intZ); dVdZ = zeros(inta,intx,intK,intZ); 
     
     % Container : Check for HJB equation
-    dVdKf   = zeros(inta,intx,intK,intZ); dVdKb   = zeros(inta,intx,intK,intZ); 
-    dVdZf  = zeros(inta,intx,intK,intZ); dVdZb   = zeros(inta,intx,intK,intZ); dVddZ = zeros(inta,intx,intK,intZ);
+    dVdKf = zeros(inta,intx,intK,intZ); dVdKb = zeros(inta,intx,intK,intZ); 
+    dVdZf = zeros(inta,intx,intK,intZ); dVdZb = zeros(inta,intx,intK,intZ); dVddZ = zeros(inta,intx,intK,intZ);
     VK_Upwind = zeros(inta,intx,intK,intZ); VZ_Upwind = zeros(inta,intx,intK,intZ);
     
     % -------------------------------------------------- %
     % Step 1 : Construct sparse matrix for aggregate shock
     % -------------------------------------------------- %
+    % Collections of empty sparse matrices into cell arrays
+    % , for building my very big A and B (which I will call A3 and B3)
+    % A1 could also be called A_lm, A2 could also be called A_m, A3 could also be called A
     % COMMENT : Why Villaverde et al.(2019 NBER) describes exogenous variables only by forward differences ?
     zx = -min(zmu,0)/dZ + zsigma/(2*ddZ);
     zy = min(zmu,0)/dZ - max(zmu, 0)/dZ - zsigma/ddZ;
     zz = max(zmu,0)/dZ + zsigma/(2*ddZ);
     
-    % Transiton matrix for aggregate uncertainty
+    % Transiton matrix for aggregate uncertainty (cell arrays)
     Zup = cell(intK,intZ); Zcenter = cell(intK,intZ); Zdown = cell(intK,intZ);
     for iz = 1:intZ
         for ik = 1:intK
             if iz == 1
                 Zup{ik,iz} = zz(iz,1)*speye(inta*intx, inta*intx); 
                 Zcenter{ik,iz} = (zy(iz,1) + zx(iz,1))*speye(inta*intx, inta*intx);
-                Zdown{ik,iz} = sparse(inta*intx, inta*intx);
+                Zdown{ik,iz} = sparse(inta*intx, inta*intx); % zeros
             elseif iz == intZ
-                Zup{ik,iz} = sparse(inta*intx, inta*intx);
+                Zup{ik,iz} = sparse(inta*intx, inta*intx); % zeros
                 Zcenter{ik,iz} = (zy(iz,1) + zz(iz,1))*speye(inta*intx, inta*intx);
                 Zdown{ik,iz} = zx(iz,1)*speye(inta*intx, inta*intx);
             else    
@@ -64,7 +72,7 @@ function [Ass, Bss, WW, vss, cs, ps, zx,zy, zz] = inner(Kdot, vss, iteration, r,
         end
     end
     
-    %For calculate
+    % For calculation TS: do we use Zcenter later?
     ZZup = reshape(Zup,intK*intZ,1);
     ZZdown = reshape(Zdown,intK*intZ,1);
     
@@ -76,7 +84,7 @@ function [Ass, Bss, WW, vss, cs, ps, zx,zy, zz] = inner(Kdot, vss, iteration, r,
     ky = min(Kdot,0)/dK - max(Kdot,0)/dK;
     kz = max(Kdot,0)/dK;
     
-    % Transiton matrix for aggregate capital (law of motion)
+    % Transiton matrix for aggregate capital (call arrays)
     Kup = cell(intK,intZ); Kcenter = cell(intK,intZ); Kdown = cell(intK,intZ);
     for iz = 1:intZ
         for ik = 1:intK
@@ -98,37 +106,37 @@ function [Ass, Bss, WW, vss, cs, ps, zx,zy, zz] = inner(Kdot, vss, iteration, r,
     
     KKup = reshape(Kup,intK*intZ,1);
     KKdown = reshape(Kdown,intK*intZ,1);
-    
-        % -------------------------------------------------- %    
-        % Villaverde Algorithm
-        % -------------------------------------------------- %    
-        for ik=1:intK
-            for iz=1:intZ
-                Ass{ik,iz}=sparse(inta*intx, inta*intx);
-            end
-        end
 
+    % -------------------------------------------------- %    
+    % This part comes from the algorithm described in Villaverde et al.
+    % (2019)
+    % A1 could also be called A_lm, A2 could also be called A_m, A3 could also be called A    
+    % What are Ass, A2 and WW are containers which will be used later
+    for ik=1:intK
         for iz=1:intZ
-            A2{iz}=sparse(inta*intx*intK, inta*intx*intK);
+            Ass{ik,iz}=sparse(inta*intx, inta*intx);
         end
+    end
 
-        WW = sparse(inta*intx*intK*intZ, inta*intx*intK*intZ);
-        % -------------------------------------------------- %    
-        % Villaverde Algorithm
-        % -------------------------------------------------- %
-        
-        % Law of motion matirix
-        PLM = zeros(inta,intx,intK,intZ);
-        for ik = 1:intK
-            for iz = 1:intZ
-                PLM(:,:,ik,iz) = Kdot(ik,iz);
-            end
+    for iz=1:intZ
+        A2{iz}=sparse(inta*intx*intK, inta*intx*intK);
+    end
+
+    WW = sparse(inta*intx*intK*intZ, inta*intx*intK*intZ);
+
+    % Law of motion matirix
+    PLM = zeros(inta,intx,intK,intZ);
+    for ik = 1:intK
+        for iz = 1:intZ
+            PLM(:,:,ik,iz) = Kdot(ik,iz);
         end
+    end
     
     % -------------------------------------------------- %
     % Step 3 : Initial guess for some variable
     % -------------------------------------------------- %
-    % Initial value function is the value at the deterministic steady state
+    % Initial value function is the one from the deterministic steady state
+    % TS: BAD NOTATION (WHY "ss"??????)
     Vss = vss;
     
     % -------------------------------------------------- %    
@@ -141,7 +149,7 @@ function [Ass, Bss, WW, vss, cs, ps, zx,zy, zz] = inner(Kdot, vss, iteration, r,
         Vsaf(1:inta-1,:,:,:) = (Vss(2:inta,:,:,:)-Vss(1:inta-1,:,:,:))/da;
         Vsaf(inta,:,:,:) = (w(inta,:,:,:) * (1 - tau).*quadx(inta,:,:,:) + w(inta,:,:,:) * com.*(1 - quadx(inta,:,:,:))+ r(inta,:,:,:).*amax).^(-gamma);
 
-        % Backward Difference : Indivisual wealth
+        % Backward Difference : Individual wealth
         Vsab(2:inta,:,:,:) = (Vss(2:inta,:,:,:)-Vss(1:inta-1,:,:,:))/da; %w(inta,:,:,:) * (1 - tau).*quadx(inta,:,:,:) + w(inta,:,:,:) * com.*(1 - quadx(inta,:,:,:))
         Vsab(1,:,:,:) = (w(1,:,:,:) * (1 - tau).*quadx(1,:,:,:) + w(inta,:,:,:) * com.*(1 - quadx(1,:,:,:)) + r(1,:,:,:).*amin).^(-gamma);
 

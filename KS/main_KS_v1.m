@@ -11,9 +11,10 @@
 % Author : Masakazu EMOTO @ Kobe univerisity 2020/10/22 
 % Revised by Takeki Sunakawa 2021/01/05
 % E-mail address : masakazu.emoto@gmail.com
+%
+% Uses : steadystate.m, inner_v1.m, fokker_planck_v1,m, simulate_v1.m
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% ALGORITHM
+%% Summary of the algorithm
 % NOTE: Steps 0,1 and 2-1 are common between KS and XPA algorithms
 % Step 0 : Set parameters
 % Step 1 : Solve for the deterministic steady state
@@ -25,10 +26,16 @@
 % (Step 3 : Solve for the stochastic steady state)
 % Step 4 : Simulate the model and calculate the Den Haan Error
 % Step 5 : Plot relevant graphs
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 clear all; close all; format long;
 clc; tic;
+
+%% NOTE: This code is based on the ones written by FVHN. However, we extend their original code in the following two dimensions:
+UpwindKZ = 1; % (1) We use the upwind scheme not only individual wealth, a, but also K and Z.
+KFEnoKZ  = 1; % (2) We exclude the direct effect of aggregate variables K and Z on the matrix
+% A_lm in their note when we solve the KF equation (there is the indirect effect through r and w).
 
 %% -------------------------------------------------- %
 %% Step 0 : Set Parameters
@@ -132,7 +139,7 @@ Dtime = 500; % the length of simulation discarded to estimate the PLM
 muini = gds; % stationary distribution from the deterministic steady state
 Zshocks = randn(Stime,1);
 % unused
-vtime = linspace(0,T,N); % ?
+% vtime = linspace(0,T,N); % ?
 
 % Inner loop and outer loop
 disp('Calculating the inner and outer loops by KS algorithm')
@@ -146,14 +153,18 @@ while (epsilon > epsmin)
     %% -------------------------------------------------- %
     %% Step 2-1 : Inner Loop, Calculate the policy function by taking the forecasting rule (perceived law of motion) as given 
     %% -------------------------------------------------- %
-    [A1, A1tilde, A3, vss, cs, ps] = inner_org(Kdot, vss, r, w);
+%    [A1, A1tilde, A3, vss, cs, ps] = inner(Kdot, vss, iteration, r, w);
+    [A1, A1tilde, A3, vss, cs, ps] = inner_v1(Kdot, vss, r, w, UpwindKZ);
     disp('Finished solving the HJB Equation')
     
     %% -------------------------------------------------- %
     %% Step 2-2 : Outer Loop (1), Simulate the path of aggregate capital
     %% -------------------------------------------------- %
-%    [Ksim, Zsim, Zdown, Zup, Kdown, Kup] = fokker_planck(Zshocks, muini, A1);
-    [Ksim, Zsim, Kdown, Kup, Zdown, Zup] = fokker_planck_v1(Zshocks, muini, A1tilde);
+    if (KFEnoKZ)
+        [Ksim, Zsim, Kdown, Kup, Zdown, Zup] = fokker_planck_v1(Zshocks, muini, A1tilde);
+    else
+        [Ksim, Zsim, Kdown, Kup, Zdown, Zup] = fokker_planck_v1(Zshocks, muini, A1);
+    end
     disp('Finished simulating aggregate capital')
     
     %% -------------------------------------------------- %
@@ -173,7 +184,7 @@ while (epsilon > epsmin)
     %X = [X0 X1 X2 X3];
     
 %    B = (X'*X)^-1*X'*Y;
-    B = (X'*X)\(X'*Y); % Coefficient for Regression
+    B = (X'*X)\(X'*Y); % Coefficients for regression
     Y_LR = X * B;
     Y_Stad = (mean(Y - Y_LR).^2).^0.5;
     Y_R2 = 1 - (sum((Y - Y_LR).^2))/(sum((Y - mean(Y)).^2));
@@ -265,10 +276,14 @@ for time = 1:N-1
     end
 end
 simTFP = exp(Zsim);
-[sim_mu, KS_K, KS_KK] =  simulate_v1(Zsim, muini, A1tilde, Kdotnew);
+if (KFEnoKZ)
+    [sim_mu, KS_K, KS_KK] =  simulate_v1(Zsim, muini, A1tilde, Kdotnew);
+else
+    [sim_mu, KS_K, KS_KK] =  simulate_v1(Zsim, muini, A1, Kdotnew);
+end
 
-% KS_KK is simulated results using the forecasting rule only
-% KS_K is simulated results using the forecasting rule and the HJB equation
+% KS_KK is the sequence of simulated results using the forecasting rule only
+% KS_K is the sequence of simulated results using the forecasting rule and the HJB equation
 Drop = 1000; 
 DH_Error = 100.0 * max(abs(log(KS_KK(Drop+1:end)) - log(KS_K(Drop+1:end))));
 DH_Mean = 100.0 * sum(abs(log(KS_KK(Drop+1:end)) - log(KS_K(Drop+1:end))))/(N - Drop);
@@ -277,6 +292,7 @@ disp('MAX Den Haan Error')
 disp(DH_Error)
 disp('MEAN Den Haan Error')
 disp(DH_Mean)
+
 toc;
 
 % disp('Stochastic steady state by KS Algorithm')
