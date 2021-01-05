@@ -38,7 +38,7 @@ addpath ../common
 
 %% NOTE: This code is based on the ones written by FVHN. However, we extend their original code in the following two dimensions:
 UpwindKZ = 1; % (1) We use the upwind scheme not only individual wealth, a, but also K and Z.
-KFEnoKZ  = 0; % (2) We exclude the direct effect of aggregate variables K and Z on the matrix
+KFEnoKZ  = 1; % (2) We exclude the direct effect of aggregate variables K and Z on the matrix
 % A_lm in their note when we solve the KF equation (there is the indirect effect through r and w).
 
 %% -------------------------------------------------- %
@@ -154,7 +154,6 @@ for iteration=1:maxitK % Outer loop
     %% Step 2-1 : Inner Loop, Calculate the policy function by taking the forecasting rule (perceived law of motion) as given 
     %% -------------------------------------------------- %
 %     tic;
-%    [A1, A1tilde, A3, vss, cs, ps] = inner(Kdot, vss, iteration, r, w);
     [A1, A1tilde, A3, vss, cs, ps] = inner_v1(Kdot, vss, r, w, UpwindKZ);
     disp('  Finished solving the HJB Equation')
 %     toc;
@@ -164,11 +163,9 @@ for iteration=1:maxitK % Outer loop
     %% -------------------------------------------------- %
 %     tic;
     if (KFEnoKZ)
-%        [Ksim, Zsim, Kdown, Kup, Zdown, Zup] = fokker_planck_v1(Zshocks, muini, A1tilde);
 %         Ksim = fokker_planck_v2(Zsim, muini, A1tilde);
         Ksim = simulate_v2(Zsim, Zdown, Zup, zweight, muini, A1tilde);
     else
-%       [Ksim, Zsim, Kdown, Kup, Zdown, Zup] = fokker_planck_v1(Zshocks, muini, A1);
 %         Ksim = fokker_planck_v2(Zsim, Zdown, Zup, zweight, muini, A1);
         Ksim = simulate_v2(Zsim, Zdown, Zup, zweight, muini, A1);
     end
@@ -256,7 +253,7 @@ disp('Simulating the model and Calculating Den Haan Error')
 rng(100);  
 shock = randn(N,1); 
 % shock(1,1) = 0;
-% mmu = -1 + mu;
+mmu = -1 + mu;
 
 % the sequence of aggregate productivity
 Zsim = zeros(N,1);
@@ -286,16 +283,13 @@ end
 muini = gds;
 
 if (KFEnoKZ)
-%     [sim_mu, KS_K, KS_KK] =  simulate_v1(Zsim, muini, A1tilde, Kdotnew);
     [KS_K, KS_KK] = simulate_v2(Zsim, Zdown, Zup, zweight, muini, A1tilde, Kdotnew);
 else
-%     [sim_mu, KS_K, KS_KK] =  simulate_v1(Zsim, muini, A1, Kdotnew);
     [KS_K, KS_KK] = simulate_v2(Zsim, Zdown, Zup, zweight, muini, A1, Kdotnew);
 end
 
 % KS_KK is the sequence of simulated results using the forecasting rule only
 % KS_K is the sequence of simulated results using the forecasting rule and the HJB equation
-% Drop = 1000; 
 DH_Error = 100.0 * max(abs(log(KS_KK(Drop+1:end)) - log(KS_K(Drop+1:end))));
 DH_Mean = 100.0 * sum(abs(log(KS_KK(Drop+1:end)) - log(KS_K(Drop+1:end))))/(N - Drop);
 
@@ -304,7 +298,8 @@ disp(DH_Error)
 disp('MEAN Den Haan Error')
 disp(DH_Mean)
 
-std(Zsim)-sigma/sqrt(1-(1-mu)^2) % check with the theoretical moment
+std(Zsim)
+sigma/sqrt(1-(1-mu)^2) % check with the theoretical moment
 
 toc;
 

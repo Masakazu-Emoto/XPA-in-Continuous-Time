@@ -137,7 +137,6 @@ for iteration=1:maxitK % Outer loop
     %% Step 2-1 : Inner Loop, Calculate the policy function by taking the forecasting rule (perceived law of motion) as given 
     %% -------------------------------------------------- %
 %     tic;
-%    [A1, A1tilde, A3, vss, cs, ps] = inner(Kdot, vss, iteration, r, w);
     [A1, A1tilde, A3, vss, cs, ps] = inner_v1(Kdot, vss, r, w, UpwindKZ);
     disp('  Finished solving the HJB Equation')
 %     toc;
@@ -192,17 +191,17 @@ disp('Simulating the model and Calculating Den Haan Error')
 rng(100);
 shock = randn(N,1); 
 % shock(1,1) = 0; 
-% mmu = -1 + mu;
+mmu = -1 + mu;
 
 % the sequence of aggregate productivity
 Zsim = zeros(N,1);
 for time = 1:N-1
     if time == 1
-        Zsim(time+1) = mu * dT * Zmean + (1 - mu * dT) * Zmean + sigma * shock(time) * sqrt(dT);
-%        Zsim(time+1) = (1 - mmu * dT)^(-1) * (Zmean + sigma * shock(time) * sqrt(dT));
+       Zsim(time+1) = mu * dT * Zmean + (1 - mu * dT) * Zmean + sigma * shock(time) * sqrt(dT);
+%         Zsim(time+1) = (1 - mmu * dT)^(-1) * (Zmean + sigma * shock(time) * sqrt(dT));
     else
-        Zsim(time+1) = mu * dT * Zmean + (1 - mu * dT) * Zsim(time) + sigma * shock(time) * sqrt(dT);
-%        Zsim(time+1) = (1 - mmu * dT)^(-1) * (Zsim(time) + sigma * shock(time) * sqrt(dT));
+       Zsim(time+1) = mu * dT * Zmean + (1 - mu * dT) * Zsim(time) + sigma * shock(time) * sqrt(dT);
+%         Zsim(time+1) = (1 - mmu * dT)^(-1) * (Zsim(time) + sigma * shock(time) * sqrt(dT));
     end
 end
 
@@ -222,10 +221,8 @@ end
 muini = gds; 
 
 if (KFEnoKZ)
-%     [XPA_K, XPA_KK] = simulate_v1(Zsim, muini, A1tilde, Kdotnew);
     [XPA_K, XPA_KK] = simulate_v2(Zsim, Zdown, Zup, zweight, muini, A1tilde, Kdotnew);
 else
-%     [XPA_K, XPA_KK] = simulate_v1(Zsim, muini, A1, Kdotnew);
     [XPA_K, XPA_KK] = simulate_v2(Zsim, Zdown, Zup, zweight, muini, A1, Kdotnew);
 end
 
@@ -240,7 +237,8 @@ disp(DH_Error)
 disp('MEAN Den Haan Error')
 disp(DH_Mean)
 
-std(Zsim)-sigma/sqrt(1-(1-mu)^2) % check with the theoretical moment
+std(Zsim)
+sigma/sqrt(1-(1-mu)^2) % check with the theoretical moment
 
 toc;
 

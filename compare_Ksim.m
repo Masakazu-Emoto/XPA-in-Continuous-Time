@@ -5,7 +5,8 @@ Zsim_XPA = Zsim;
 Ksim_XPA = XPA_K;
 Kss_XPA = Kds;
 
-load ./REITER/Zsim_REITER_rrhoTFP0.25.mat vAggregateTFP Kpath KSS;
+%load ./REITER/Zsim_REITER_rrhoTFP0.25.mat vAggregateTFP Kpath KSS;
+load ./REITER/Zsim_REITER_rrhoTFP0.75.mat vAggregateTFP Kpath KSS;
 Zsim_REITER = vAggregateTFP;
 Ksim_REITER = Kpath;
 Kss_REITER = KSS;
