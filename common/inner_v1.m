@@ -1,25 +1,27 @@
 function [A1, A1tilde, A3, vss, cs, ps, zx, zy, zz] = inner_org(Kdot, vss, r, w, UpwindKZ)
 %% inner_v1.m : This code solves the Hamilton-Jacobi-Bellman equation with aggregate uncertainty by the finite differential method
+%
 %% INPUTS
-% Kdot      : the forecasting rule
-% vss       : the initial value function from the steady state
-% r         : the real interest rate
-% w         : the wage rate
-% UpwindKZ  : the flag for the wpwind scheme for K and Z
+%    Kdot       : the forecasting rule
+%    vss        : the initial value function from the steady state
+%    r          : the real interest rate
+%    w          : the wage rate
+%    UpwindKZ   : the flag for the wpwind scheme for K and Z
+%
 %% OUTPUTS
-% A1    : A_lm
-% A1tilde : A_lm, excluding the effect of aggregate variables, to be used when we solve the KF equation
-% A3    : the transition matrix, A3
-% cs    : The policy function for consumption
-% ps    : The policy function for savings
-% zx    : Forward difference of V in terms of Z (to be removed)
-% zy    : Central difference of V in terms of Z
-% zz    : Backward difference of V in terms of Z
-
+%    A1         : A_lm
+%    A1tilde    : A_lm, excluding the effect of aggregate variables, to be used when we solve the KF equation
+%    A3         : the transition matrix, A3
+%    cs         : The policy function for consumption
+%    ps         : The policy function for savings
+%    zx         : Forward difference of V in terms of Z (to be removed)
+%    zy         : Central difference of V in terms of Z
+%    zz         : Backward difference of V in terms of Z
+%
 %% NOTE: This code is based on b3_HJB.m written by FVHN. However, we extend their original code in the following two dimensions:
-% (1) We use the upwind scheme not only individual wealth, a, but also K and Z.
-% (2) We exclude the direct effect of aggregate variables K and Z on the matrix
-% A_lm in their note when we solve the KF equation (there is the indirect effect through r and w).
+%    (1) We use the upwind scheme not only individual wealth, a, but also K and Z.
+%    (2) We exclude the direct effect of aggregate variables K and Z on the matrix
+%    A_lm in their note when we solve the KF equation (there is the indirect effect through r and w).
 
     global gamma rho alpha delta la intx x mu sigma com tau LAve 
     global maxit maxitK crit critK Delta damp

@@ -1,17 +1,19 @@
 function [Ksim, Zsim, Kdown, Kup, Zdown, Zup] = fokker_planck_v1(Zshocks, muini, Ass)
 %% fokker_planck_v1.m : This code simulates the complete path of the distribution given the shock, to estimate the forecasting rule
+%
 %% INPUTS
-% Zshocks   : the exogenous aggregate shocks
-% muini     : the initial distribution from the steady state
-% Ass       : the transition matrix obtained in the inner loop
+%    randZ      : the exogenous aggregate shocks
+%    muini      : the initial distribution from the steady state
+%    Ass        : the transition matrix obtained in the inner loop
+%
 %% OUTPUTS
-% Ksim      : simulated aggregate capital
-% Zsim      : simulated aggregate productivity
-% Kdown     : the downward closest point of Kgrid
-% Kup       : the upward closest point of Kgrid
-% Zdown     : the downward closest point of Zgrid
-% Zup       : the upward closest point of Zgrid
-
+%    Ksim       : simulated aggregate capital
+%    Zsim       : simulated aggregate productivity
+%    Kdown      : the downward closest point of Kgrid
+%    Kup        : the upward closest point of Kgrid
+%    Zdown      : the downward closest point of Zgrid
+%    Zup        : the upward closest point of Zgrid
+%
 %% NOTE: This code is based on b5_KFE.m written by FVHN.
 
     global gamma rho alpha delta la intx x mu sigma com tau LAve 

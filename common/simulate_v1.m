@@ -1,15 +1,16 @@
 function [sim_mu, simK, simKK] = simulate_v1(randZ, muini, Ass, Kdot)
 %% simulate_v1.m : This code simulates the complete path of the distribution given the shock, to estimate the forecasting rule
+%
 %% INPUTS
-% randZ     : the exogenous aggregate shocks
-% muini     : the initial distribution from the steady state
-% Ass       : the transition matrix obtained in the inner loop
-% Kdot      : the forecasting rule
+%    randZ      : the exogenous aggregate shocks
+%    muini      : the initial distribution from the steady state
+%    Ass        : the transition matrix obtained in the inner loop
+%    Kdot       : the forecasting rule
+%
 %% OUTPUTS
-% sim_mu    : simulated distribution
-% simK      : simulated aggregate capital
-% simKK     : simulated aggregate capital using the forecasting rule only
-% (for the Den Haan error)
+%    sim_mu     : simulated distribution
+%    simK       : simulated aggregate capital
+%    simKK      : simulated aggregate capital using the forecasting rule only (for the Den Haan error)
 
     global gamma rho alpha delta la intx x mu sigma com tau LAve 
     global maxit maxitK crit critK Delta damp

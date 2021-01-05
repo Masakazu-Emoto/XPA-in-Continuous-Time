@@ -1,12 +1,14 @@
 function [muxz, psix, zeta] = bias(gds, pds)
 %% bias.m : This code calculates the bias-correlation terms to solve for the forecasting rule by XPA algorithm
+%
 %% INPUTS
-% gds       : the stationary distribution
-% pds       : the policy function for savings at the deterministic steady state
+%    gds        : the stationary distribution
+%    pds        : the policy function for savings at the deterministic steady state
 %% OUTPUTS
-% muxz      : the population conditioned on labor productivity
-% psix      : the ratio of the capital conditioned on labor productivity to aggregate capital
-% zeta      : bias correction terms
+%
+%    muxz       : the population conditioned on labor productivity
+%    psix       : the ratio of the capital conditioned on labor productivity to aggregate capital
+%    zeta       : bias correction terms
 
     global gamma rho alpha delta la intx x com tau LAve 
     global maxit maxitK crit critK Delta damp

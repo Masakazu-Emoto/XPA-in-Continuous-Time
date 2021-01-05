@@ -1,4 +1,4 @@
-%% main_KS.m : This code solves the Krusell and Smith model in continuous time by KS Algorithm
+%% main_KS_v1.m : This code solves the Krusell and Smith model in continuous time by KS Algorithm
 %
 % Masakazu Emoto and Takeki Sunakawa (2021)
 % "Applying the Explicit Aggregation Algorithm to Heterogeneous Agent Models in Continuous Time"
@@ -14,19 +14,18 @@
 % E-mail address : masakazu.emoto@gmail.com
 %
 % Uses : steadystate.m, inner_v1.m, fokker_planck_v1.m, simulate_v1.m
-
+%
 %% Summary of the algorithm
 % NOTE: Steps 0,1 and 2-1 are common between KS and XPA algorithms
-% Step 0 : Set parameters
-% Step 1 : Solve for the deterministic steady state
-% Step 2 : KS algorithm
-% Step 2-1 : Inner Loop, Calculate the policy function by taking the forecasting rule (perceived law of motion) as given 
-% Step 2-2 : Outer Loop (1), Simulate the path of aggregate capital
-% Step 2-3 : Outer Loop (2), Solve for the forecasting rule by linear
-% regression of simulated data
-% (Step 3 : Solve for the stochastic steady state)
-% Step 4 : Simulate the model and calculate the Den Haan Error
-% Step 5 : Plot graphs
+%   Step 0 : Set parameters
+%   Step 1 : Solve for the deterministic steady state
+%   Step 2 : KS algorithm
+%   Step 2-1 : Inner Loop, Calculate the policy function by taking the forecasting rule (perceived law of motion) as given 
+%   Step 2-2 : Outer Loop (1), Simulate the path of aggregate capital
+%   Step 2-3 : Outer Loop (2), Solve for the forecasting rule by linear regression of simulated data
+%   (Step 3 : Solve for the stochastic steady state)
+%   Step 4 : Simulate the model and calculate the Den Haan Error
+%   Step 5 : Plot graphs
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -209,10 +208,11 @@ toc;
 %% -------------------------------------------------- %
 %% Step 3 : Solve for the stochastic steady state
 %% -------------------------------------------------- %
+%% TO BE FIXED
 % disp('Calculating stochastic steady state')
 % muini = gds; Zss = ones(N,1).*Zmean;
 % ssTFP = exp(Zss);
-% [ss_mu, Kss, KKss] = stochastic_steady(simZ, muini, Bss, Kdotnew);
+% [ss_mu, Kss, KKss] = stochastic_steady(simZ, muini, Atilde, Kdotnew);
 % toc;
 
 % disp('Stochastic steady state by KS Algorithm')
@@ -222,32 +222,22 @@ toc;
 %% Step 4 : Simulate the model and calculate the Den Haan Error
 %% -------------------------------------------------- %
 disp('Simulating the model and Calculating Den Haan Error')
-% We refer to Ahn et al to calculate the Den Haan error
+% We refer to Ahn et al to calculate the Den Haan error???
 N = 10000; 
 muini = gds; 
 Zsim = zeros(N,1); 
 rng(100);  
 shock = randn(N,1); 
-shock(1,1) = 0; % why ???
+shock(1,1) = 0;
 mmu = -1 + mu;
-
-Zmean = 0
-% Shock for Aggregate productivity
-Zshocks = randn(Stime,1);
-% in fokker_planck.m
-for time = 1:Stime-1
-    if time == 1
-        Zsim(time+1) = mu *dT * Zmean + (1 - mu * dT) * Zmean + sigma * Zshocks(time) * sqrt(dT);
-    else
-        Zsim(time+1) = mu *dT * Zmean + (1 - mu * dT) * Zsim(time) + sigma * Zshocks(time) * sqrt(dT);
-    end
-end
 
 for time = 1:N-1
     if time == 1
-        Zsim(time+1) = (1 - mmu * dT)^(-1) * (Zmean + sigma * shock(time) * sqrt(dT));
+        Zsim(time+1) = mu * dT * Zmean + (1 - mu * dT) * Zmean + sigma * shock(time) * sqrt(dT);
+%        Zsim(time+1) = (1 - mmu * dT)^(-1) * (Zmean + sigma * shock(time) * sqrt(dT));
     else
-        Zsim(time+1) = (1 - mmu * dT)^(-1) * (Zsim(time) + sigma * shock(time) * sqrt(dT));
+        Zsim(time+1) = mu * dT * Zmean + (1 - mu * dT) * Zsim(time) + sigma * shock(time) * sqrt(dT);
+%        Zsim(time+1) = (1 - mmu * dT)^(-1) * (Zsim(time) + sigma * shock(time) * sqrt(dT));
     end
 end
 %simTFP = exp(Zsim);
@@ -267,6 +257,8 @@ disp('MAX Den Haan Error')
 disp(DH_Error)
 disp('MEAN Den Haan Error')
 disp(DH_Mean)
+
+std(Zsim)
 
 toc;
 

@@ -1,12 +1,14 @@
 function Kdotnew = outer(ps, muxz, psix, zeta)
 %% outer.m : This code calculates new forecasting rule by XPA algorithm
+%
 %% INPUTS
-% ps        : the policy function for savings
-% muxz      : the population conditioned on labor productivity
-% psix      : the ratio of the capital conditioned on labor productivity to aggregate capital
-% zeta      : bias correction terms
+%    ps         : the policy function for savings
+%    muxz       : the population conditioned on labor productivity
+%    psix       : the ratio of the capital conditioned on labor productivity to aggregate capital
+%    zeta       : bias correction terms
+%
 %% OUTPUTS
-% Kdotnew   : new forecasting rule
+%    Kdotnew    : new forecasting rule
 
     global gamma rho alpha delta la intx x com tau LAve 
     global maxit maxitK crit critK Delta damp

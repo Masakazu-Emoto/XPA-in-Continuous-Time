@@ -1,16 +1,19 @@
 function [rds, wds, Kds, Ads, uds, cds, pds, ids, Vds, gds, X, Y, Z] = steadystate()
 %% steadystate.m : This code calculates the deterministic steady state
+%
+%% INPUTS
+%    NA
+%% OUTPUTS
+%
 % Reference : Achdou et al. (2017 NBER)
-%% INPUTS : NA
-%% OUTPUTS : 
-
+%
 %% Summary of the algorithm
-% Step 0 : Initial guesses
-% Step 1 : Solves for the deterministic steady state
-% Step 1-1 : Value function iteration by the finite differential method
-% Step 1-2 : Calculates the stationary distribution
-% Step 1-3 : Checks the stationary equilibrium condition
-% Step 2 : Calculates values at the steady state
+%   Step 0 : Initial guesses
+%   Step 1 : Solves for the deterministic steady state
+%   Step 1-1 : Value function iteration by the finite differential method
+%   Step 1-2 : Calculates the stationary distribution
+%   Step 1-3 : Checks the stationary equilibrium condition
+%   Step 2 : Calculates values at the steady state
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -88,7 +91,8 @@ function [rds, wds, Kds, Ads, uds, cds, pds, ids, Vds, gds, X, Y, Z] = steadysta
             if gamma == 1
                 u = log(c);
             else
-                u = (c.^(1-gamma) )/(1-gamma);
+%                u = (c.^(1-gamma)-1)/(1-gamma);
+                u = (c.^(1-gamma))/(1-gamma);
             end
             
             % Construct sparse matrix for individual wealth

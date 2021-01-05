@@ -1,4 +1,4 @@
-function [linvalues, vtime, nonvalues] = simulate(g1,impact,T,N,shocks,method,blowup,subset)
+function [values,vtime] = simulate(g1,impact,T,N,shocks,method,blowup,subset)
 % Given linear dynamics
 %        dx = g1*x*dt + impact * dZ
 %    simulates the values of x for T time period with N steps with
@@ -45,165 +45,39 @@ function [linvalues, vtime, nonvalues] = simulate(g1,impact,T,N,shocks,method,bl
 % SYNTAX:
 % [values,vtime] = simulate(g1,impact,T,N,shocks,method,blowup,subset)
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% This code is to calculate the Den Haan Error
-% This code modifies Ahn's GitHub code enables to calculate the Den Haan Error
-% Line 76 - 132 : We calculate the case of the non-linear dynamics about
-% the wealth distribution dynamics by Implict method
-% Line 146- 202 : We calculate the case of the non-linear dynamics about
-% the wealth distribution dynamics by Explict method
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-global ggamma rrho ddelta aalpha ssigmaTFP rrhoTFP z lla mmu ttau I amin amax a da aa ...
-	zz Aswitch rmin rmax r0 maxit crit Delta Ir crit_S IfSS IbSS I0SS aaa zzz varsSS zAvg nVars nEErrors ggSS
 vtime = linspace(0,T,N);
 dt = vtime(2)-vtime(1);
 
 % Preallocation
 [nvars,~] = size(g1);
-linvalues = zeros(nvars,N); nonvalues = zeros(4*I,N+1);
-if (method == 'implicit')     
+values = zeros(nvars,N);
+
+if (method == 'implicit')
     % if N is small, might be faster just to do backslash instead. To use
-    % backslash method, just uncomment line 51/54 and comment line 50/53
-    
-    % Linearized Solution
+    %    backslash method, just uncomment line 51/54 and comment line 50/53
     gg1 = inv(speye(size(g1)) - g1*dt);
+    % gg1 = speye(size(g1))-g1*dt;
     for n = 1 : N
-        linvalues(:,n+1) = gg1*(linvalues(:,n) + (dt^(1/2))*impact*shocks(:,n));
+        values(:,n+1) = gg1*(values(:,n) + (dt^(1/2))*impact*shocks(:,n));
+        % values(:,n+1) = gg1\(values(:,n) + (dt^(1/2))*impact*shocks(:,n));
     end
-    
-    % For Den Haan Error : Non-Linearized Solution
-    vdot(:,1) = linvalues(1:2*I,1); gdot(:,1) = linvalues(2*I+1:4*I,1); TFP(1,1) = linvalues(4*I,1);
-    nonvalues(:,1) = [vdot(:,1); gdot(1:end-1,1); TFP(1,1)];
-    for n = 1 : N
-        g = gdot(1:end-1,n) + varsSS(2*I+1:4*I-1);	% vector of distribution, removing last point		
-        g_end = 1/da-sum(g);
-
-        V = vdot(1:2*I,n) + varsSS(1:2*I);
-        V = reshape(V,I,2);
-        
-        T = TFP(1,n);
-        K = sum(aaa .* [g;g_end] * da); 
-        r = exp(T) * aalpha * (K ^ (aalpha - 1)) * (zAvg ^ (1 - aalpha)) - ddelta;
-        w = exp(T) * (1 - aalpha) * (K ^ aalpha) * (zAvg ^ (-aalpha)); 
-        
-        % Compute forward difference
-        dVf(1:I-1,:) = (V(2:I,:)-V(1:I-1,:))/da;
-        dVf(I,:) = (w*((1 - ttau) * z + mmu * (1 - z)) + r.*amax).^(-ggamma); %will never be used, but impose state constraint a<=amax just in case
-
-        % Compute backward difference
-        dVb(2:I,:) = (V(2:I,:)-V(1:I-1,:))/da;
-        dVb(1,:) = (w*((1 - ttau) * z + mmu * (1 - z)) + r.*amin).^(-ggamma); %state constraint boundary condition
-
-        % Compute consumption and savings with forward difference
-        cf = dVf.^(-1/ggamma);
-        ssf = w*((1 - ttau) * zz + mmu * (1 - zz)) + r.*aa - cf;
-
-        % Compute consumption and savings with backward difference
-        cb = dVb.^(-1/ggamma);
-        ssb = w*((1 - ttau) * zz + mmu * (1 - zz)) + r.*aa - cb;
-
-        % Compute consumption and derivative of value function for no drift
-        c0 = w*((1 - ttau) * zz + mmu * (1 - zz)) + r.*aa;
-        dV0 = c0.^(-ggamma);
-
-        % Compute upwind differences    
-        If = ssf > 0;         % positive drift --> forward difference
-        Ib = ssb < 0;       % negative drift --> backward difference
-        I0 = (1-If-Ib);     % no drift
-        dV_Upwind = dVf.*If + dVb.*Ib + dV0.*I0;
-        c = dV_Upwind.^(-1/ggamma);
-
-        % Construct matrix for updating implicit scheme
-        X = -min(ssb,0)/da;
-        Y = -max(ssf,0)/da + min(ssb,0)/da;
-        Z = max(ssf,0)/da;
-
-        A1=spdiags(Y(:,1),0,I,I)+spdiags(X(2:I,1),-1,I,I)+spdiags([0;Z(1:I-1,1)],1,I,I);
-        A2=spdiags(Y(:,2),0,I,I)+spdiags(X(2:I,2),-1,I,I)+spdiags([0;Z(1:I-1,2)],1,I,I);
-        A = [A1,sparse(I,I);sparse(I,I),A2] + Aswitch;
-
-        gnext = (speye(I*2) - A' * dt)\[g; g_end]; % Implicit Case
-        gdot(:,n+1) = gnext - varsSS(2*I+1:4*I);
-        vdot(:,n+1) =  gg1(1:2*I,:)*(nonvalues(:,n) + (dt^(1/2))*impact*shocks(:,n));
-        TFP(:,n+1) =  gg1(4*I,:)*(nonvalues(:,n) + (dt^(1/2))*impact*shocks(:,n));
-        nonvalues(:,n+1) = [vdot(:,n+1); gdot(1:end-1,n+1); TFP(1,n+1)];
-    end
+    values = values(:,2:end);
     if nargin > 6
-        linvalues = blowup*linvalues;
+        values = blowup*values;
         if nargin > 7
-            linvalues = linvalues(subset,:);
+            values = values(subset,:);
         end
     end
-    
 elseif (method == 'explicit')
     gg1 = speye(size(g1))+g1*dt;
     for n = 1 : N
-        linvalues(:,n+1) = gg1*(linvalues(:,n) + (dt^(1/2))*impact*shocks(:,n));	
+        values(:,n+1) = gg1*(values(:,n) + (dt^(1/2))*impact*shocks(:,n));	
     end
-    
-    % For Den Haan Error : Non-Linearized Solution
-    vdot(:,1) = linvalues(1:2*I,2); gdot(:,1) = linvalues(2*I+1:4*I,2); TFP(1,1) = linvalues(4*I,2);
-    nonvalues(:,1) = [vdot(:,1); gdot(1:end-1,1); TFP(1,1)];
-    for n = 1 : N
-        g = gdot(1:end-1,n) + varsSS(2*I+1:4*I-1);	% vector of distribution, removing last point		
-        g_end = 1/da-sum(g);
-
-        V = vdot(1:2*I,n) + varsSS(1:2*I);
-        V = reshape(V,I,2);
-        
-        T = TFP(1,n);
-        K = sum(aaa .* [g;g_end] * da); 
-        r = exp(T) * aalpha * (K ^ (aalpha - 1)) * (zAvg ^ (1 - aalpha)) - ddelta;
-        w = exp(T) * (1 - aalpha) * (K ^ aalpha) * (zAvg ^ (-aalpha)); 
-        
-        % Compute forward difference
-        dVf(1:I-1,:) = (V(2:I,:)-V(1:I-1,:))/da;
-        dVf(I,:) = (w*((1 - ttau) * z + mmu * (1 - z)) + r.*amax).^(-ggamma); %will never be used, but impose state constraint a<=amax just in case
-
-        % Compute backward difference
-        dVb(2:I,:) = (V(2:I,:)-V(1:I-1,:))/da;
-        dVb(1,:) = (w*((1 - ttau) * z + mmu * (1 - z)) + r.*amin).^(-ggamma); %state constraint boundary condition
-
-        % Compute consumption and savings with forward difference
-        cf = dVf.^(-1/ggamma);
-        ssf = w*((1 - ttau) * zz + mmu * (1 - zz)) + r.*aa - cf;
-
-        % Compute consumption and savings with backward difference
-        cb = dVb.^(-1/ggamma);
-        ssb = w*((1 - ttau) * zz + mmu * (1 - zz)) + r.*aa - cb;
-
-        % Compute consumption and derivative of value function for no drift
-        c0 = w*((1 - ttau) * zz + mmu * (1 - zz)) + r.*aa;
-        dV0 = c0.^(-ggamma);
-
-        % Compute upwind differences    
-        If = ssf > 0;         % positive drift --> forward difference
-        Ib = ssb < 0;       % negative drift --> backward difference
-        I0 = (1-If-Ib);     % no drift
-        dV_Upwind = dVf.*If + dVb.*Ib + dV0.*I0;
-        c = dV_Upwind.^(-1/ggamma);
-
-        % Construct matrix for updating implicit scheme
-        X = -min(ssb,0)/da;
-        Y = -max(ssf,0)/da + min(ssb,0)/da;
-        Z = max(ssf,0)/da;
-
-        A1=spdiags(Y(:,1),0,I,I)+spdiags(X(2:I,1),-1,I,I)+spdiags([0;Z(1:I-1,1)],1,I,I);
-        A2=spdiags(Y(:,2),0,I,I)+spdiags(X(2:I,2),-1,I,I)+spdiags([0;Z(1:I-1,2)],1,I,I);
-        A = [A1,sparse(I,I);sparse(I,I),A2] + Aswitch;
-
-        gnext = [g; g_end] + A' * [g; g_end]*dt;    % Explicit Case
-        gdot(:,n+1) = gnext - varsSS(2*I+1:4*I);
-        vdot(:,n+1) =  gg1(1:2*I,:)*(nonvalues(:,n) + (dt^(1/2))*impact*shocks(:,n));
-        TFP(:,n+1) =  gg1(4*I,:)*(nonvalues(:,n) + (dt^(1/2))*impact*shocks(:,n));
-        nonvalues(:,n+1) = [vdot(:,n+1); gdot(1:end-1,n+1); TFP(1,n+1)];
-    end
+    values = values(:,2:end);
     if nargin > 6
-        linvalues = blowup*linvalues;
+        values = blowup*values;
         if nargin > 7
-            linvalues = linvalues(subset,:);
+            values = values(subset,:);
         end
     end
 else
