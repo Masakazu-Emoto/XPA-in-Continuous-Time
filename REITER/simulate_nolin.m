@@ -80,8 +80,8 @@ if (method == 'implicit')
         TFP(:,n+1) = gg1(4*I,:)*(nonvalues(:,n) + (dt^(1/2))*impact*shocks(:,n));
         nonvalues(:,n+1) = [vdot(:,n+1); gdot(1:end-1,n+1); TFP(1,n+1)];
     end
-    linvalues = linvalues(:,2:end);
-    nonvalues = nonvalues(:,2:end);
+%     linvalues = linvalues(:,2:end);
+%     nonvalues = nonvalues(:,2:end);
     if nargin > 6
         linvalues = blowup*linvalues;
         if nargin > 7
@@ -124,7 +124,7 @@ end
 end
 
 function [A,g,g_end] = calcA(gdot,vdot,TFP,n)
-% calculate the transition matrix
+% calculate the transition matrix given gdot and vdot
 
     global ggamma rrho ddelta aalpha ssigmaTFP rrhoTFP z lla mmu ttau I amin amax a da aa ...
     zz Aswitch rmin rmax r0 maxit crit Delta Ir crit_S IfSS IbSS I0SS aaa zzz varsSS zAvg nVars nEErrors ggSS

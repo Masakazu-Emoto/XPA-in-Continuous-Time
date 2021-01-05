@@ -1,8 +1,8 @@
 % simulating OU process
 clear all;
 
-N = 1000000; 
-dT = 0.25;
+N = 5000000; 
+dT = 1.0; %0.25;
 Zmean = 0;
 mu = 0.25; % 1 - mu is persistence
 sigma = 0.007;
@@ -28,6 +28,7 @@ for time = 1:N-1
 end
 
 sigma/sqrt(1-(1-mu)^2) % theoretical moment?
+%sigma/sqrt(1-mu^2) % theoretical moment?
 std(Zsim1)
 std(Zsim2)
 

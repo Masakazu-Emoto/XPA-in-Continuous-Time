@@ -29,8 +29,11 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-clear all; close all; format long;
-clc; tic;
+clear all; 
+% close all; 
+format long;
+% clc; 
+tic;
 addpath ../common
 
 %% NOTE: This code is based on the ones written by FVHN. However, we extend their original code in the following two dimensions:
@@ -121,6 +124,28 @@ end
 % Initial distribution from the deterministic steady state
 muini = gds;
 
+% The path of aggregate productvity
+Zsim = zeros(Stime,1);
+for time = 1:Stime-1
+    if time == 1
+        Zsim(time+1) = mu *dT * Zmean + (1 - mu * dT) * Zmean + sigma * Zshocks(time) * sqrt(dT);
+    else
+        Zsim(time+1) = mu *dT * Zmean + (1 - mu * dT) * Zsim(time) + sigma * Zshocks(time) * sqrt(dT);
+    end
+end
+ 
+Zup     = zeros(Stime,1); 
+Zdown   = zeros(Stime,1);
+zweight = zeros(Stime,1);
+
+for time = 1:Stime
+    Zsim(time)    = max([Zsim(time) Zmin+0.000001]);
+    Zsim(time)    = min([Zsim(time) Zmax-0.000001]);
+    Zdown(time)   = floor((Zsim(time)-Zmin)/dZ)+1;
+    Zup(time)     = ceil((Zsim(time)-Zmin)/dZ)+1;
+    zweight(time) = (gridZ(Zup(time))-Zsim(time))/dZ;    % weight of ZposD
+end
+    
 % Inner loop and outer loop
 disp('Calculating the inner and outer loops by KS algorithm')
 disp(' ')
@@ -139,9 +164,13 @@ for iteration=1:maxitK % Outer loop
     %% -------------------------------------------------- %
 %     tic;
     if (KFEnoKZ)
-        [Ksim, Zsim, Kdown, Kup, Zdown, Zup] = fokker_planck_v1(Zshocks, muini, A1tilde);
+%        [Ksim, Zsim, Kdown, Kup, Zdown, Zup] = fokker_planck_v1(Zshocks, muini, A1tilde);
+%         Ksim = fokker_planck_v2(Zsim, muini, A1tilde);
+        Ksim = simulate_v2(Zsim, Zdown, Zup, zweight, muini, A1tilde);
     else
-        [Ksim, Zsim, Kdown, Kup, Zdown, Zup] = fokker_planck_v1(Zshocks, muini, A1);
+%       [Ksim, Zsim, Kdown, Kup, Zdown, Zup] = fokker_planck_v1(Zshocks, muini, A1);
+%         Ksim = fokker_planck_v2(Zsim, Zdown, Zup, zweight, muini, A1);
+        Ksim = simulate_v2(Zsim, Zdown, Zup, zweight, muini, A1);
     end
     disp('  Finished simulating aggregate capital')
 %     toc;
@@ -222,15 +251,15 @@ toc;
 %% Step 4 : Simulate the model and calculate the Den Haan Error
 %% -------------------------------------------------- %
 disp('Simulating the model and Calculating Den Haan Error')
-% We refer to Ahn et al to calculate the Den Haan error???
-N = 10000; 
-muini = gds; 
-Zsim = zeros(N,1); 
+% N = 10000; 
+% Shock for Aggregate productivity
 rng(100);  
 shock = randn(N,1); 
-shock(1,1) = 0;
-mmu = -1 + mu;
+% shock(1,1) = 0;
+% mmu = -1 + mu;
 
+% the sequence of aggregate productivity
+Zsim = zeros(N,1);
 for time = 1:N-1
     if time == 1
         Zsim(time+1) = mu * dT * Zmean + (1 - mu * dT) * Zmean + sigma * shock(time) * sqrt(dT);
@@ -240,16 +269,33 @@ for time = 1:N-1
 %        Zsim(time+1) = (1 - mmu * dT)^(-1) * (Zsim(time) + sigma * shock(time) * sqrt(dT));
     end
 end
-%simTFP = exp(Zsim);
+
+Zup     = zeros(N,1);
+Zdown   = zeros(N,1);
+zweight = zeros(N,1);
+
+for time = 1:N
+    Zsim(time)    = max([Zsim(time) Zmin+0.000001]);
+    Zsim(time)    = min([Zsim(time) Zmax-0.000001]);
+    Zdown(time)   = floor((Zsim(time) - Zmin)/dZ) + 1;
+    Zup(time)     = ceil((Zsim(time) - Zmin)/dZ) + 1;
+    zweight(time) = (gridZ(Zup(time)) - Zsim(time))/dZ;
+end
+
+% the initial distribution
+muini = gds;
+
 if (KFEnoKZ)
-    [sim_mu, KS_K, KS_KK] =  simulate_v1(Zsim, muini, A1tilde, Kdotnew);
+%     [sim_mu, KS_K, KS_KK] =  simulate_v1(Zsim, muini, A1tilde, Kdotnew);
+    [KS_K, KS_KK] = simulate_v2(Zsim, Zdown, Zup, zweight, muini, A1tilde, Kdotnew);
 else
-    [sim_mu, KS_K, KS_KK] =  simulate_v1(Zsim, muini, A1, Kdotnew);
+%     [sim_mu, KS_K, KS_KK] =  simulate_v1(Zsim, muini, A1, Kdotnew);
+    [KS_K, KS_KK] = simulate_v2(Zsim, Zdown, Zup, zweight, muini, A1, Kdotnew);
 end
 
 % KS_KK is the sequence of simulated results using the forecasting rule only
 % KS_K is the sequence of simulated results using the forecasting rule and the HJB equation
-Drop = 1000; 
+% Drop = 1000; 
 DH_Error = 100.0 * max(abs(log(KS_KK(Drop+1:end)) - log(KS_K(Drop+1:end))));
 DH_Mean = 100.0 * sum(abs(log(KS_KK(Drop+1:end)) - log(KS_K(Drop+1:end))))/(N - Drop);
 
@@ -258,7 +304,7 @@ disp(DH_Error)
 disp('MEAN Den Haan Error')
 disp(DH_Mean)
 
-std(Zsim)
+std(Zsim)-sigma/sqrt(1-(1-mu)^2) % check with the theoretical moment
 
 toc;
 
@@ -275,7 +321,7 @@ xlim([Zmin Zmax]); ylim([Kmin Kmax]);
 intKK = 16; 
 intZZ = 41; 
 gridKK = linspace(Kmin,Kmax,intKK)';
-gridZZ = linspace(Zmin, Zmax,intZZ)';
+gridZZ = linspace(Zmin,Zmax,intZZ)';
 LOM = interp1(gridK,Kdot,gridKK,'spline');
 LOM = interp1(gridZ,LOM',gridZZ,'spline');
 
@@ -312,6 +358,8 @@ xlabel('Simulation time : $T$', 'interpreter','latex','FontSize',10);
 ylabel('Capital : $K$', 'interpreter','latex','FontSize',10);
 legend('$K^*_{t}$', '$\tilde{K}_{t}$','Location','northwest','interpreter','latex'); grid;
 toc;
+
+save Zsim_KS.mat Zsim KS_K Kds;
 
 % Save the Results
 % save CT_KS.mat

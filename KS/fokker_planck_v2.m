@@ -1,18 +1,16 @@
-function [Ksim, Zsim, Kdown, Kup, Zdown, Zup] = fokker_planck_v2(randZ, muini, Ass)
+function Ksim = fokker_planck_v2(Zsim, Zdown, Zup, zweight, muini, Ass)
 %% fokker_planck_v2.m : This code simulates the complete path of the distribution given the shock, to estimate the forecasting rule
 %
 %% INPUTS
-%    randZ      : the exogenous aggregate shocks
+%    Zsim       : simulated aggregate productivity
+%    Zdown      : the downward closest point of Zgrid
+%    Zup        : the upward closest point of Zgrid
+%    zweight    : weight based on a value of Z and Zgrid
 %    muini      : the initial distribution from the steady state
 %    Ass        : the transition matrix obtained in the inner loop
 %
 %% OUTPUTS
 %    Ksim       : simulated aggregate capital
-%    Zsim       : simulated aggregate productivity
-%    Kdown      : the downward closest point of Kgrid
-%    Kup        : the upward closest point of Kgrid
-%    Zdown      : the downward closest point of Zgrid
-%    Zup        : the upward closest point of Zgrid
 %
 %% NOTE: This code is based on b5_KFE.m written by FVHN.
 
@@ -23,37 +21,24 @@ function [Ksim, Zsim, Kdown, Kup, Zdown, Zup] = fokker_planck_v2(randZ, muini, A
     global Zmax Zmin Zmean intZ zmu zsigma gridZ dZ ddZ
     global T N Stime Dtime vtime dT
  
-    %% This part is to be moved to the main file
-    % Zsim    = zeros(Stime,1);
-    Zup     = zeros(Stime,1); Zdown   = zeros(Stime,1);
-    zweight = zeros(Stime,1);
-
-    % The path of aggregate productvity - why???
-    % this is not done in simulate_v1.m???
-%     for time = 1:Stime-1
-%         if time == 1
-%             Zsim(time+1) = mu *dT * Zmean + (1 - mu * dT) * Zmean + sigma * Zshocks(time) * sqrt(dT);
-%         else
-%             Zsim(time+1) = mu *dT * Zmean + (1 - mu * dT) * Zsim(time) + sigma * Zshocks(time) * sqrt(dT);
-%         end
+%     Zup     = zeros(Stime,1); 
+%     Zdown   = zeros(Stime,1);
+%     zweight = zeros(Stime,1);
+%     
+%     for time = 1:Stime
+%         Zsim(time)    = max([Zsim(time) Zmin+0.000001]);
+%         Zsim(time)    = min([Zsim(time) Zmax-0.000001]);
+%         Zdown(time)   = floor((Zsim(time)-Zmin)/dZ)+1;
+%         Zup(time)     = ceil((Zsim(time)-Zmin)/dZ)+1;
+%         zweight(time) = (gridZ(Zup(time))-Zsim(time))/dZ;    % weight of ZposD
 %     end
-    
-    for time = 1:Stime
-        Zsim(time)    = max([Zsim(time) Zmin+0.000001]);
-        Zsim(time)    = min([Zsim(time) Zmax-0.000001]);
-        Zdown(time)   = floor((Zsim(time)-Zmin)/dZ)+1;
-        Zup(time)     = ceil((Zsim(time)-Zmin)/dZ)+1;
-        zweight(time) = (gridZ(Zup(time))-Zsim(time))/dZ;    % weight of ZposD
-    end
 
     %% MAIN LOOP
     munow = muini;
 
     Ksim   = zeros(Stime,1);
-    Kup    = zeros(Stime,1); % KposU
-    Kdown  = zeros(Stime,1); % KposD
-%     KKup   = zeros(Stime,1); % KKposU
-%     KKdown = zeros(Stime,1); % KKposD
+    Kup    = zeros(Stime,1);
+    Kdown  = zeros(Stime,1);
 
     for time = 1:Stime
         
@@ -88,7 +73,7 @@ function [Ksim, Zsim, Kdown, Kup, Zdown, Zup] = fokker_planck_v2(randZ, muini, A
             Nextdd = reshape(Mdd,inta,intx);
             
             % Then we compute the wealth distribution in the next period, averaging these four results by linear interpolation with respect to aggregate capital and aggregate productivity
-            munext = (1 - kweight) * (1 - zweight(time - 1)) * Nextuu + (1 - kweight) * zweight(time - 1) * Nextud + kweight * (1 - zweight(time - 1)) * Nextdu + kweight * zweight(time - 1) * Nextdd;
+            munext = (1 - Kweight) * (1 - zweight(time - 1)) * Nextuu + (1 - Kweight) * zweight(time - 1) * Nextud + Kweight * (1 - zweight(time - 1)) * Nextdu + Kweight * zweight(time - 1) * Nextdd;
             
         end
         
@@ -98,7 +83,7 @@ function [Ksim, Zsim, Kdown, Kup, Zdown, Zup] = fokker_planck_v2(randZ, muini, A
         Ksim(time) = min([Ksim(time) Kmax-0.000001]);
         Kdown(time) = floor((Ksim(time) - Kmin)/dK) + 1;
         Kup(time) = ceil((Ksim(time) - Kmin)/dK) + 1;
-        kweight = (gridK(Kup(time)) - Ksim(time))/dK;
+        Kweight = (gridK(Kup(time)) - Ksim(time))/dK;
         
         munow = munext; % update the distribution
         

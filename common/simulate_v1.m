@@ -1,16 +1,17 @@
-function [sim_mu, simK, simKK] = simulate_v1(randZ, muini, Ass, Kdot)
+function [Ksim, KKsim] = simulate_v1(Zsim, muini, Ass, Kdot)
 %% simulate_v1.m : This code simulates the complete path of the distribution given the shock, to estimate the forecasting rule
 %
 %% INPUTS
-%    randZ      : the exogenous aggregate shocks
+%    Zsim       : simulated aggregate productivity
 %    muini      : the initial distribution from the steady state
 %    Ass        : the transition matrix obtained in the inner loop
 %    Kdot       : the forecasting rule
 %
 %% OUTPUTS
-%    sim_mu     : simulated distribution
-%    simK       : simulated aggregate capital
-%    simKK      : simulated aggregate capital using the forecasting rule only (for the Den Haan error)
+%    Ksim       : simulated aggregate capital
+%    KKsim      : simulated aggregate capital using the forecasting rule only (for the Den Haan error)
+%
+%% NOTE: This code is based on b5_KFE.m written by FVHN.
 
     global gamma rho alpha delta la intx x mu sigma com tau LAve 
     global maxit maxitK crit critK Delta damp
@@ -19,25 +20,28 @@ function [sim_mu, simK, simKK] = simulate_v1(randZ, muini, Ass, Kdot)
     global Zmax Zmin Zmean intZ zmu zsigma gridZ dZ ddZ
     global T N vtime dT
     
-    simK = zeros(N,1); simKK = zeros(N,1); 
     
     Zup = zeros(N,1); Zdown = zeros(N,1);
-    Kup = zeros(N,1); Kdown = zeros(N,1);
-    KKup = zeros(N,1); KKdown = zeros(N,1);
-    
-    zweight = zeros(N,1); Kweight = zeros(N,1); KKweight = zeros(N,1);
+    zweight = zeros(N,1); %Kweight = zeros(N,1); KKweight = zeros(N,1);
     
     for time = 1:N
-        randZ(time)   = max([randZ(time) Zmin+0.000001]);
-        randZ(time)   = min([randZ(time) Zmax-0.000001]);
-        Zdown(time)   = floor((randZ(time) - Zmin)/dZ) + 1;
-        Zup(time)     = ceil((randZ(time) - Zmin)/dZ) + 1;
-        zweight(time) = (gridZ(Zup(time)) - randZ(time))/dZ;
+        Zsim(time)    = max([Zsim(time) Zmin+0.000001]);
+        Zsim(time)    = min([Zsim(time) Zmax-0.000001]);
+        Zdown(time)   = floor((Zsim(time) - Zmin)/dZ) + 1;
+        Zup(time)     = ceil((Zsim(time) - Zmin)/dZ) + 1;
+        zweight(time) = (gridZ(Zup(time)) - Zsim(time))/dZ;
     end
         
     %% MAIN LOOP
     munow = muini;
 
+    Ksim  = zeros(N,1); 
+    KKsim = zeros(N,1); 
+    Kup   = zeros(N,1); 
+    Kdown = zeros(N,1);
+    KKup   = zeros(N,1); 
+    KKdown = zeros(N,1);
+    
     for time = 1:N
         
         if time == 1
@@ -75,13 +79,13 @@ function [sim_mu, simK, simKK] = simulate_v1(randZ, muini, Ass, Kdot)
             
         end
         
-        simK(time)  = sum(munext' * grida * da);
+        Ksim(time)  = sum(munext' * grida * da);
 
-        simK(time)  = max([simK(time) Kmin+0.000001]);
-        simK(time)  = min([simK(time) Kmax-0.000001]);
-        Kdown(time) = floor((simK(time) - Kmin)/dK) + 1;
-        Kup(time)   = ceil((simK(time) - Kmin)/dK) + 1;
-        Kweight     = (gridK(Kup(time)) - simK(time))/dK;
+        Ksim(time)  = max([Ksim(time) Kmin+0.000001]);
+        Ksim(time)  = min([Ksim(time) Kmax-0.000001]);
+        Kdown(time) = floor((Ksim(time) - Kmin)/dK) + 1;
+        Kup(time)   = ceil((Ksim(time) - Kmin)/dK) + 1;
+        Kweight     = (gridK(Kup(time)) - Ksim(time))/dK;
         
         munow = munext; % update the distribution
         
@@ -106,18 +110,18 @@ function [sim_mu, simK, simKK] = simulate_v1(randZ, muini, Ass, Kdot)
         
         end
             
-        simKK(time)  = Knew;
+        KKsim(time)  = Knew;
 
-        simKK(time)  = max([simKK(time) Kmin+0.000001]);
-        simKK(time)  = min([simKK(time) Kmax-0.000001]);
-        KKdown(time) = floor((simKK(time) - Kmin)/dK) + 1;
-        KKup(time)   = ceil((simKK(time) - Kmin)/dK) + 1;
-        KKweight     = (gridK(KKup(time)) - simKK(time))/dK;
+        KKsim(time)  = max([KKsim(time) Kmin+0.000001]);
+        KKsim(time)  = min([KKsim(time) Kmax-0.000001]);
+        KKdown(time) = floor((KKsim(time) - Kmin)/dK) + 1;
+        KKup(time)   = ceil((KKsim(time) - Kmin)/dK) + 1;
+        KKweight     = (gridK(KKup(time)) - KKsim(time))/dK;
         
         Know = Knew;
     
     end
     
-    sim_mu = munext;
+%    sim_mu = munext;
     
 end

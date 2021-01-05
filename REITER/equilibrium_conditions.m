@@ -105,7 +105,7 @@ hjbResidual = reshape(u,2*I,1) + A * reshape(V,2*I,1) + VDot + VEErrors - rrho *
 gIntermediate = A' * [g;g_end];
 gResidual = gDot - gIntermediate(1:2*I-1,1);
 
-% Aggregates ����Ԃ���̘��� KHat�͒���Ԃ̎��{�X�g�b�N
+% Aggregates 定常状態からの乖離 KHatは定常状態の資本ストック
 kResidual = K - KHat;
 rResidual = r - rHat;
 wResidual = w - wHat;

@@ -96,15 +96,16 @@ zsigma = sigma^2.*ones(intZ,1);
 %% for simulations
 %% -------------------------------------------------- %
 global T N Stime Dtime vtime dT
-% the below is used in simulation.m???
-T = 500;  % years
-N = 2000; % periods for simulation
-dT = T/N; % interval of time, = 0.25
+% the below is used in simulation.m
+%T = 500;  % years
+dT = 0.25; %T/N; % interval of time, = 0.25
+N = 10000; % periods for simulation
+Drop = 1000;
 % the below is used in fokker_planck.m
-rng(100); 
 Stime = 1000; % the length of simulation 
 Dtime = 500; % the length of simulation discarded to estimate the PLM
 % Shock for Aggregate productivity
+rng(100); 
 Zshocks = randn(Stime,1);
 
 % unused

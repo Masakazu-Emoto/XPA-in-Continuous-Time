@@ -200,4 +200,8 @@ legend('Non-Linear','Linear','Location','northwest','interpreter','latex');
 
 toc(tstart)
 
+figure;
+plot(vAggregateTFP);
 std(vAggregateTFP) % why?
+
+save Zsim_REITER_rrhoTFP0.25.mat vAggregateTFP Kpath KSS;
