@@ -1,7 +1,7 @@
-function [Ksim, Zsim, Kdown, Kup, Zdown, Zup] = fokker_planck_v1(Zshocks, muini, Ass)
-%% fokker_planck_v1.m : This code simulates the complete path of the distribution given the shock, to estimate the forecasting rule
+function [Ksim, Zsim, Kdown, Kup, Zdown, Zup] = fokker_planck_v2(randZ, muini, Ass)
+%% fokker_planck_v2.m : This code simulates the complete path of the distribution given the shock, to estimate the forecasting rule
 %% INPUTS
-% Zshocks   : the exogenous aggregate shocks
+% randZ   : the exogenous aggregate shocks
 % muini     : the initial distribution from the steady state
 % Ass       : the transition matrix obtained in the inner loop
 %% OUTPUTS
@@ -22,20 +22,19 @@ function [Ksim, Zsim, Kdown, Kup, Zdown, Zup] = fokker_planck_v1(Zshocks, muini,
     global T N Stime Dtime vtime dT
  
     %% This part is to be moved to the main file
-    Zsim    = zeros(Stime,1);
-    Zup     = zeros(Stime,1);
-    Zdown   = zeros(Stime,1);
+    % Zsim    = zeros(Stime,1);
+    Zup     = zeros(Stime,1); Zdown   = zeros(Stime,1);
     zweight = zeros(Stime,1);
 
     % The path of aggregate productvity - why???
     % this is not done in simulate_v1.m???
-    for time = 1:Stime-1
-        if time == 1
-            Zsim(time+1) = mu *dT * Zmean + (1 - mu * dT) * Zmean + sigma * Zshocks(time) * sqrt(dT);
-        else
-            Zsim(time+1) = mu *dT * Zmean + (1 - mu * dT) * Zsim(time) + sigma * Zshocks(time) * sqrt(dT);
-        end
-    end
+%     for time = 1:Stime-1
+%         if time == 1
+%             Zsim(time+1) = mu *dT * Zmean + (1 - mu * dT) * Zmean + sigma * Zshocks(time) * sqrt(dT);
+%         else
+%             Zsim(time+1) = mu *dT * Zmean + (1 - mu * dT) * Zsim(time) + sigma * Zshocks(time) * sqrt(dT);
+%         end
+%     end
     
     for time = 1:Stime
         Zsim(time)    = max([Zsim(time) Zmin+0.000001]);

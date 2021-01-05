@@ -157,8 +157,8 @@ vAggregateInvestment_reduced = log(vAggregateInvestment) - log(varsSS_small(7));
 
 %% Step 6: Plot relevant values
 
-% KKpath is simulated results using the non-linear dynamics
-% Kpath is simulated results using the linearized dynamics
+% KKpath is the sequence of simulated results using the non-linear dynamics
+% Kpath is the sequence of simulated results using the linearized dynamics
 Drop = 1000;
 DH_Error = 100.0*max(abs(log(Kpath(1001:end-1)) - log(KKpath(1002:end))))
 DH_Mean = 100.0 * sum(abs(log(Kpath(1001:end-1)) - log(KKpath(1002:end))))/(N - Drop)

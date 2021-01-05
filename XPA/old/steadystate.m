@@ -1,45 +1,38 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% "Applying the Explicit Aggregation Algorithm to Heterogeneous Agent Models in Continuous Time."
-% By Masakazu Emoto and Takeki Sunakawa
-% This code calculates deterministic steady state
-% This code is refered by Achdou et al.(2017 NBER)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Masakazu EMOTO @ Kobe univerisity 2020/10/22 
-% Address : masakazu.emoto@gmail.com
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [rds, wds, Kds, Ads, uds, cds, pds, ids, Vds, gds, X, Y, Z] = steadystate()
+%% steadystate.m : This code calculates the deterministic steady state
+% Reference : Achdou et al. (2017 NBER)
+%% INPUTS : NA
+%% OUTPUTS : 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Algorithm 
-% Step 0 : Initial guess
-% Step 1 : Calculates deterministic steady state
-% Step 1-1 : Value function iteration by finite differencial method
+%% Summary of the algorithm
+% Step 0 : Initial guesses
+% Step 1 : Solves for the deterministic steady state
+% Step 1-1 : Value function iteration by the finite differential method
 % Step 1-2 : Calculates the stationary distribution
 % Step 1-3 : Checks the stationary equilibrium condition
 % Step 2 : Calculates values at the steady state
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-function [rds, wds, Kds, Ads, uds, cds, pds, ids, Vds, gds, X, Y ,Z] = steadystate()
 
     global gamma rho alpha delta la intx x com tau LAve 
     global maxit maxitK crit critK Delta damp
     global inta amin amax grida da aa aaa xx xxx Aswitch
     
     %--------------------------------------------------%
-    % Step 0 : Initial guess
+    % Step 0 : Initial guesses
     %--------------------------------------------------%
-    % Initial Guess
+    % Initial guess for r, K and w 
     r = 0.005; rmax = rho; rmin = 0.0001;
     K = (((alpha) / (r + delta)) ^ (1 / (1 - alpha))) * LAve;
     w = (1 - alpha) * (K ^ alpha) * ((LAve) ^ (-alpha));
     
-    %Finite difference approximation of the partial derivatives
+    % Finite difference approximation of the partial derivatives
     Vaf = zeros(inta,intx); Vab = zeros(inta,intx);
 
     % Consumption
     c = zeros(inta,intx);
     
-    % Initial guess for value function
+    % Initial guess for the value function
     if gamma == 1
         v0(:,1) = log((w * (1 - tau).* x(1) + w * com.* (1 - x(1)) + r.*grida))/rho;
         v0(:,2) = log((w * (1 - tau).* x(2) + w * com.* (1 - x(2)) + r.*grida))/rho;
@@ -50,16 +43,16 @@ function [rds, wds, Kds, Ads, uds, cds, pds, ids, Vds, gds, X, Y ,Z] = steadysta
     v = v0;
 
     %--------------------------------------------------%
-    % Step 1 : Calculate deterministic steady state
+    % Step 1 : Solves for the deterministic steady state
     %--------------------------------------------------%
-    for iter=1:maxitK
-    disp('Main loop iteration')
-    disp(iter)
+    for iter=1:maxitK % Outer loop
+%     disp('Main loop iteration')
+%     disp(iter)
     
         %--------------------------------------------------%
-        % Step 1-1 : Value function iteration by finite differencial method
+        % Step 1-1 : Value function iteration by the finite differencial method
         %--------------------------------------------------%
-        for n = 1:maxit
+        for n = 1:maxit % Inner loop
         
             V = v;
 
@@ -85,11 +78,11 @@ function [rds, wds, Kds, Ads, uds, cds, pds, ids, Vds, gds, X, Y ,Z] = steadysta
 
             % dV_upwind makes a choice of forward or backward differences based on
             % the sign of the drift
-            If = sf > 0;                % Positive drift --> Forward difference
+            If = sf > 0;              % Positive drift --> Forward difference
             Ib = sb < 0;              % Negative drift --> Backward difference
             I0 = (1 - If - Ib);       % Drift is zero --> At steady state
 
-            Va_Upwind = Vaf.*If + Vab.*Ib + Va0.*I0; %important to include third term
+            Va_Upwind = Vaf.*If + Vab.*Ib + Va0.*I0; % important to include third term
 
             c = (Va_Upwind).^(-1/gamma);
             if gamma == 1
@@ -114,20 +107,21 @@ function [rds, wds, Kds, Ads, uds, cds, pds, ids, Vds, gds, X, Y ,Z] = steadysta
             
             b = u_stacked + V_stacked/Delta;
 
-            V_stacked = B\b; %SOLVE SYSTEM OF EQUATIONS
+            V_stacked = B\b; % SOLVE SYSTEM OF EQUATIONS
             V = reshape(V_stacked,inta,intx);
 
             Vchange = V - v;
             v = V;
 
             dist(n) = max(max(abs(Vchange)));
-            disp(max(max(abs(Vchange))))
+%             disp(max(max(abs(Vchange))))
             if dist(n) < crit
-                disp('Value Function Converged, Iteration = ')
-                disp(n)
+%                 disp('Value Function Converged, Iteration = ')
+%                 disp(n)
                 break
             end
-        end
+            
+        end % Inner loop
 
         %--------------------------------------------------%
         % Step 1-2 : Calculates the stationary distribution
@@ -157,23 +151,24 @@ function [rds, wds, Kds, Ads, uds, cds, pds, ids, Vds, gds, X, Y ,Z] = steadysta
         Ex(iter) = S - K;
        
         if Ex(iter) > critK 
-            disp('Excess Supply')
+%             disp('Excess Supply')
             rmax = r;
-            r = 0.5 * ( r + rmin);
+            r = 0.5 * (r + rmin);
         elseif Ex(iter) < -critK
-            disp('Excess Demand')
+%             disp('Excess Demand')
             rmin = r;
             r = 0.5 * (r + rmax);
         elseif abs(Ex(iter)) < critK
-            disp('Steady state found')
-            disp(r)
+%             disp('Steady state found')
+%             disp(r)
             break
         end
         
-        % Update Capital
+        % Update Capital and wage based on r
         K = (((alpha) / (r + delta)) ^ (1 / (1 - alpha))) * LAve;
         w = (1 - alpha) * (K ^ alpha) * ((LAve) ^ (-alpha));
 
+        % Initial guess for the value function for the next outer loop : needed???       
         if gamma == 1
             v0(:,1) = log((w * (1 - tau).* x(1) + w * com.* (1 - x(1)) + r.*grida))/rho;
             v0(:,2) = log((w * (1 - tau).* x(2) + w * com.* (1 - x(2)) + r.*grida))/rho;
@@ -182,12 +177,13 @@ function [rds, wds, Kds, Ads, uds, cds, pds, ids, Vds, gds, X, Y ,Z] = steadysta
             v0(:,2) = (w * (1 - tau).* x(2) + w * com.* (1 - x(2)) + r.*grida).^(1-gamma)/(1-gamma)/rho;
         end
         v = v0;
-    end
+        
+    end % Outer loop
     
     %--------------------------------------------------%
     % Step 2 : Calculates values at the steady state
     %--------------------------------------------------%
-    % Value at deterministic steady state
+    % Values at the deterministic steady state
     rds = r;
     Kds = (((alpha) / (rds + delta)) ^ (1 / (1 - alpha))) * LAve;
     wds = (1 - alpha) * (Kds ^ alpha) * ((LAve) ^ (-alpha));

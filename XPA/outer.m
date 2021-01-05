@@ -1,13 +1,12 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% "Applying the Explicit Aggregation Algorithm to Heterogeneous Agent Models in Continuous Time."
-% By Masakazu Emoto and Takeki Sunakawa
-% This code calculates new forecastig rule by XPA algorithm
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Masakazu EMOTO @ Kobe univerisity 2020/10/22 
-% Address : masakazu.emoto@gmail.com
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [Kdotnew, xpavec] = outer(ps, muxz, psix, zeta)
+function Kdotnew = outer(ps, muxz, psix, zeta)
+%% outer.m : This code calculates new forecasting rule by XPA algorithm
+%% INPUTS
+% ps        : the policy function for savings
+% muxz      : the population conditioned on labor productivity
+% psix      : the ratio of the capital conditioned on labor productivity to aggregate capital
+% zeta      : bias correction terms
+%% OUTPUTS
+% Kdotnew   : new forecasting rule
 
     global gamma rho alpha delta la intx x com tau LAve 
     global maxit maxitK crit critK Delta damp
@@ -17,21 +16,22 @@ function [Kdotnew, xpavec] = outer(ps, muxz, psix, zeta)
     global quada quadx quadK quadZ
     
     % Container
-    xpavec = zeros(intx,intZ); Kdotnew = zeros(intK,intZ); bias = 1;
+    xpavec = zeros(intx,intZ); Kdotnew = zeros(intK,intZ); 
+    % flag for bias correction
+    bias = 1;
     
-    % Calculate New law of motion
+    % Calculate the new forecasting rule
     for ik = 1:intK
         for iz = 1:intZ
             
             for ix = 1:intx
-                % The amount of capital conditioned on labor productivity
+                % the amount of capital conditioned on labor productivity
                 Know = psix(ix, iz)* gridK(ik);
                 
+                % Liner interpolation for policy function approximation at the conditional capital
                 % Grid search for Know
                 ia = gridsearch(Know,grida);
-                weight = (grida(ia + 1) - Know)/da; 
-                
-                % Liner interpolation for policy function approximation at aggregate capital
+                weight = (grida(ia + 1) - Know)/da;                
                 gvec = (1 - weight) * ps(ia + 1, ix, ik, iz) + weight * ps(ia, ix, ik, iz);
                 if bias == 1
                     xpavec(ix,iz) = gvec + zeta(ix,iz); % with bias-correlation
@@ -40,8 +40,9 @@ function [Kdotnew, xpavec] = outer(ps, muxz, psix, zeta)
                 end
             end
             
-            % New law of motion
+            % New forecasting rule
             Kdotnew(ik, iz) =  sum(sum(muxz(:,iz)' * xpavec(:,iz),1));
         end
     end
+    
 end
