@@ -1,10 +1,13 @@
 # Krusell-Smith (KS) Algorithm in Continuous Time
 
-This is a program for solving Krusell-Smith model in continuos time by KS algorithm as described in
+These are programs for solving Krusell-Smith model in continuous time by Krusell-Smith, XPA, and REITER as described in
 
-* Emoto and Sunakawa "Applying the Explicit Aggregation Algorithm to Heterogeneous Agent Models in Continuous Time."
-* https://tkksnk.github.io/wps/
+* Masakazu Emoto and Takeki Sunakawa (2021) "Applying the Explicit Aggregation Algorithm to Heterogeneous Agent Models in Continuous Time," which is avaialble at https://tkksnk.github.io/wps/
 
-This code is refered and modified by Villaverde et al.(2019 NBER)
+* Reference : Fernandez-Villaverde, J., S. Hurtado and G. Nuno (2019, FVHN hereafter) "Solving the Krusell-Smith (1998) model" "Financial Frictions and the Wealth Distribution"
 
-For questions like code, etc., email: Masakazu Emoto <masakazu.emoto@gmail.com>
+* The original code is downloaded from https://github.com/jesusfv/financial-frictions/tree/master/KS_LR
+
+* To run the main program with the baseline parameters in `common/parameter.m` and see some results, run `main_KS_v1.m` with `diagnose = 1;` `loadtemp = 0;`
+
+For questions about the programs, please send an email to: Masakazu Emoto <masakazu.emoto@gmail.com>
