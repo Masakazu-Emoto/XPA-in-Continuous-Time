@@ -65,9 +65,10 @@ global Zmax Zmin Zmean intZ zmu zsigma gridZ dZ ddZ
 inta = 100; 
 amin = 0; 
 amax = 100;
-% COMMENT : What is the optimum number of grids?
 intK = 3;
 intZ = 3; 
+% intK = 5;
+% intZ = 5;
 
 % Individual wealth grid
 grida = linspace(amin,amax,inta)';
@@ -82,15 +83,14 @@ xxx = reshape(xx,2*inta,1);
 % Idiosyncratic shock process: for the transition matrix in solving HJB
 Aswitch = [-speye(inta) * la(1), speye(inta) * la(1); speye(inta) * la(2), -speye(inta) * la(2)];
 
-% Aggregate productivity grid
-%Zmax = 2*sigma; Zmin = -2*sigma; intZ = 3; Zmean = 0;
-Zmax = 2*sigma; Zmin = -2*sigma; Zmean = 0;
-gridZ = linspace(Zmin,Zmax,intZ)'; dZ = (Zmax - Zmin)/(intZ - 1); ddZ = dZ^2;
-gridZ((intZ+1)/2,1) = Zmean;
-
-% Aggregate Shock Process
-zmu = mu.*(Zmean - gridZ); 
-zsigma = sigma^2.*ones(intZ,1);
+% % Aggregate productivity grid
+% Zmax = 2*sigma; Zmin = -2*sigma; Zmean = 0;
+% gridZ = linspace(Zmin,Zmax,intZ)'; dZ = (Zmax - Zmin)/(intZ - 1); ddZ = dZ^2;
+% gridZ((intZ+1)/2,1) = Zmean;
+% 
+% % Aggregate Shock Process
+% zmu = mu.*(Zmean - gridZ); 
+% zsigma = sigma^2.*ones(intZ,1);
 
 %% -------------------------------------------------- %
 %% for simulations
@@ -101,6 +101,10 @@ global T N Stime Dtime vtime dT
 dT = 0.25; %T/N; % interval of time, = 0.25
 N = 10000; % periods for simulation
 Drop = 1000;
+% Shock for Aggregate productivity
+rng(100);  
+ZshocksN = randn(N,1); 
+
 % the below is used in fokker_planck.m
 Stime = 1000; % the length of simulation 
 Dtime = 500; % the length of simulation discarded to estimate the PLM

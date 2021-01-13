@@ -4,14 +4,14 @@ function [A1, A1tilde, A3, vss, cs, ps, zx, zy, zz] = inner_org(Kdot, vss, r, w,
 %% INPUTS
 %    Kdot       : the forecasting rule
 %    vss        : the initial value function from the steady state
-%    r          : the real interest rate
-%    w          : the wage rate
-%    UpwindKZ   : the flag for the wpwind scheme for K and Z
+%    r          : real interest rate
+%    w          : wage rate
+%    UpwindKZ   : flag for the upwind scheme for K and Z
 %
 %% OUTPUTS
 %    A1         : A_lm
 %    A1tilde    : A_lm, excluding the effect of aggregate variables, to be used when we solve the KF equation
-%    A3         : the transition matrix, A3
+%    A3         : the transition matrix in the HJB
 %    cs         : The policy function for consumption
 %    ps         : The policy function for savings
 %    zx         : Forward difference of V in terms of Z (to be removed)
@@ -37,9 +37,11 @@ function [A1, A1tilde, A3, vss, cs, ps, zx, zy, zz] = inner_org(Kdot, vss, r, w,
     dVddZ = zeros(inta,intx,intK,intZ);
 
     % for consistency (to be moved to main file)
-    zx = -min(zmu,0)/dZ + zsigma/(2*ddZ);
-    zy = min(zmu,0)/dZ - max(zmu, 0)/dZ - zsigma/ddZ;
-    zz = max(zmu,0)/dZ + zsigma/(2*ddZ);
+    % zmu, zsigma and dZ are vectors with the length of intZ
+    zx = -min(zmu,0)/dZ + zsigma/(2*ddZ); % backward
+    zy = min(zmu,0)/dZ - max(zmu, 0)/dZ - zsigma/ddZ; % center
+    zz = max(zmu,0)/dZ + zsigma/(2*ddZ); % forward
+    z1 = -zmu/dZ - zsigma/ddZ; %- mu*(Zmean-quadZ)/dZ - ((sigma/dZ)^2)
     
     %% -------------------------------------------------- %
     %% Our Algorithm
@@ -53,6 +55,7 @@ function [A1, A1tilde, A3, vss, cs, ps, zx, zy, zz] = inner_org(Kdot, vss, r, w,
         Zup = cell(intK,intZ); Zcenter = cell(intK,intZ); Zdown = cell(intK,intZ);
         for iz = 1:intZ
             for ik = 1:intK
+%                 Zcenter{ik,iz} = z1(iz,1)*speye(inta*intx, inta*intx);
                 if iz == 1
                     Zup{ik,iz} = zz(iz,1)*speye(inta*intx, inta*intx); 
                     Zcenter{ik,iz} = (zy(iz,1) + zx(iz,1))*speye(inta*intx, inta*intx);
@@ -75,11 +78,13 @@ function [A1, A1tilde, A3, vss, cs, ps, zx, zy, zz] = inner_org(Kdot, vss, r, w,
         kx = -min(Kdot,0)/dK;
         ky = min(Kdot,0)/dK - max(Kdot,0)/dK;
         kz = max(Kdot,0)/dK;
+        k1 = -Kdot/dK;
 
         % Transiton matrix for aggregate capital (perceived law of motion)
         Kup = cell(intK,intZ); Kcenter = cell(intK,intZ); Kdown = cell(intK,intZ);
         for iz = 1:intZ
             for ik = 1:intK
+%                 Kcenter{ik,iz} = k1(ik,iz)*speye(inta*intx,inta*intx);
                 if ik == 1
                     Kup{ik,iz} = kz(ik,iz)*speye(inta*intx,inta*intx);
                     Kcenter{ik,iz} = (ky(ik,iz) + kx(ik,iz))*speye(inta*intx,inta*intx);
@@ -178,21 +183,24 @@ function [A1, A1tilde, A3, vss, cs, ps, zx, zy, zz] = inner_org(Kdot, vss, r, w,
 %         elem_e       = max(sf,0)/da; %( sf.*Iaf)/da;
 %         elem_b       = -max(sf,0)/da+min(sb,0)/da - PLM/dK - mu*(Zmean-quadZ)/dZ - ((sigma/dZ)^2);
 %         elem_btilde  = -max(sf,0)/da+min(sb,0)/da;
-        elem_a       = (-sb.*Iab)/da;
-        elem_e       = ( sf.*Iaf)/da;
-        elem_b       = -elem_a-elem_e - PLM/dK - mu*(Zmean-quadZ)/dZ - ((sigma/dZ)^2);
-        elem_btilde  = -elem_a-elem_e; % for A1tilde matrix
-        elem_r       = ((sigma/dZ)^2)/2;                % this one is a scalar
-        elem_x       = mu*(Zmean-gridZ)/dZ + elem_r;    % this one is a vector
+        elem_a       = (-sb.*Iab)/da; % backward
+        elem_e       = ( sf.*Iaf)/da; % forward
+        elem_b       = -elem_a-elem_e - PLM/dK - mu*(Zmean-quadZ)/dZ - ((sigma/dZ)^2); % center
+        elem_btilde  = -elem_a-elem_e; % center without derivatives of K and Z for A1tilde matrix
+        elem_r       = ((sigma/dZ)^2)/2;                % this one is a scalar (or doesn't depend on the index for Z)
+        elem_x       = mu*(Zmean-gridZ)/dZ + elem_r;    % this one is a vector (or does depend on the index for Z)
         
-        % Fill A1 collection
+        % Fill A1 collection (for derivatives of a)
         for ik=1:intK
             for iz=1:intZ
+                % without derivatives of K and Z
                 A11tilde       = spdiags(elem_btilde(:,1,ik,iz),0,inta,inta) + spdiags(elem_a(2:inta,1,ik,iz),-1,inta,inta) + spdiags([0;elem_e(1:inta-1,1,ik,iz)],1,inta,inta);
                 A12tilde       = spdiags(elem_btilde(:,2,ik,iz),0,inta,inta) + spdiags(elem_a(2:inta,2,ik,iz),-1,inta,inta) + spdiags([0;elem_e(1:inta-1,2,ik,iz)],1,inta,inta);
                 A1tilde{ik,iz} = [A11tilde,sparse(inta, inta); sparse(inta, inta),A12tilde] + Aswitch;
                 
                 % for our algorithm
+                %% NOTE: why A1's with and without the UpwindKZ option are different?
+%                 A1{ik,iz}  = A1tilde{ik,iz} + Zcenter{ik,iz} + Kcenter{ik,iz};
                 if (UpwindKZ)
                     A1{ik,iz}  = A1tilde{ik,iz} + Zcenter{ik,iz} + Kcenter{ik,iz};
                 else
@@ -206,11 +214,13 @@ function [A1, A1tilde, A3, vss, cs, ps, zx, zy, zz] = inner_org(Kdot, vss, r, w,
         %% -------------------------------------------------- %
         %% Our Algorithm
         %% -------------------------------------------------- % 
+        %% We use the upwind scheme for K and Z as well
         if (UpwindKZ)
         
-            AAss = reshape(A1, intK*intZ,1);
+            AAss = reshape(A1,intK*intZ,1);
 
             % Sparse matrix for calculating value function
+            % each cell has vectors with the length of intK*intZ
             W = cell(intZ*intK,intZ*intK);
             for iw = 1:intZ*intK
                 for jw = 1:intZ*intK
@@ -248,13 +258,13 @@ function [A1, A1tilde, A3, vss, cs, ps, zx, zy, zz] = inner_org(Kdot, vss, r, w,
 
             % Translate the matrix from W to WW and debug for WW
             A3 = cell2mat(W);
-            % spy(WW,'b')
+            % spy(A3,'b')
 
         %% -------------------------------------------------- %    
         %% FVHN Algorithm
         %% -------------------------------------------------- % 
         else
-            % Fill A2 collection
+            % Fill A2 collection (for derivatives of K)
             jumper =inta*intx;
             for iz = 1:intZ
                 for ik = 1:intK
@@ -268,7 +278,7 @@ function [A1, A1tilde, A3, vss, cs, ps, zx, zy, zz] = inner_org(Kdot, vss, r, w,
                 A2{iz}((intK - 1)*jumper+1:intK*jumper, (intK - 1)*jumper + 1:intK*jumper)=A2{iz}((intK-1)*jumper+1:intK*jumper,(intK-1)*jumper+1:intK*jumper)+(Kdot(intK,iz)/dK)*speye(inta*intx,inta*intx);
             end
 
-            % Fill A3
+            % Fill A3 (for derivatives of Z)
             jumper = inta*intx*intK;
             for iz=1:intZ
                 A3((iz-1)*jumper+1:iz*jumper,(iz-1)*jumper+1:iz*jumper) = A2{iz};

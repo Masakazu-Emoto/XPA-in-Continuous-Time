@@ -76,6 +76,7 @@ if (method == 'implicit')
         [A,g,g_end] = calcA(gdot,vdot,TFP,n);
         gnext = (speye(I*2) - A' * dt)\[g; g_end]; % Implicit Case
         gdot(:,n+1) = gnext - varsSS(2*I+1:4*I);
+        % NOTE: gg1 from linearized solution is used to update vdot???
         vdot(:,n+1) = gg1(1:2*I,:)*(nonvalues(:,n) + (dt^(1/2))*impact*shocks(:,n));
         TFP(:,n+1) = gg1(4*I,:)*(nonvalues(:,n) + (dt^(1/2))*impact*shocks(:,n));
         nonvalues(:,n+1) = [vdot(:,n+1); gdot(1:end-1,n+1); TFP(1,n+1)];

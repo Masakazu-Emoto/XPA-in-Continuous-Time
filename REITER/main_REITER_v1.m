@@ -17,7 +17,6 @@
 % set_parameters.m, compute_steady_state.m, equilibrium_conditions.m
 %
 % NOTE: We modify the original simulate.m in the phact toolbox to calculatethe Den Haan Errors. 
-%% internal_consistency_check.m is also changed?
 %
 %% Summary of the algorithm
 %    Step 0 : Set Parameters
@@ -35,6 +34,9 @@ clear all;
 % close all;
 tstart = tic;
 
+diagnose = 0;
+loadtemp = 1;
+
 %% Set options for this example run
 % initialize shocks for simulation
 %% NOTE: This is used for calculating the Den Haan Errors with simulate_nolin.m
@@ -44,6 +46,10 @@ vAggregateShock = randn(1,N+1);
 %% Step 0: Set Parameters
 % The script sets up parameters relevant for the model
 set_parameters;
+if (loadtemp)
+    load temp.mat ssigmaTFP;
+    fprintf('std for Zshock = %1.4f\n',ssigmaTFP);
+end
 
 %% Step 1: Solve for Steady State
 % Non-stochastic steady state can be found using any methods. In
@@ -55,8 +61,7 @@ fprintf('Computing steady state...\n')
 global IfSS IbSS I0SS varsSS A ggSS
 
 [rSS,wSS,KSS,ASS,uSS,cSS,VSS,gSS,dVUSS,dVfSS,dVbSS,IfSS,IbSS,I0SS] = compute_steady_state();
-KSS
-fprintf('Time to compute steady state: %.3g seconds\n\n\n',toc(tStart));
+if (diagnose); fprintf('Time to compute steady state: %.3g seconds\n\n\n',toc(tStart)); end;
 
 % Store steady state values
 varsSS = zeros(nVars,1);
@@ -93,7 +98,7 @@ derivs = getderivs(derivativesIntermediate);
 % Vderivs = getderivs(VEError); %% for what???
 tDerivs = toc(t0);
 fprintf('...Done!\n')
-fprintf('Time to compute derivatives: %2.4f seconds\n\n\n',tDerivs)
+if (diagnose); fprintf('Time to compute derivatives: %2.4f seconds\n\n\n',tDerivs); end;
 if tDerivs > 1
     warning('If you compile mex files for automatics differentiation, matrix vector multiplication will be slow');
     disp('Press any key to continue...');
@@ -133,9 +138,11 @@ fprintf('Solving reduced linear system...\n')
 [G1,~,impact,eu,F] = schur_solver(g0,g1,c,psi,pi,1,1,1);
 
 fprintf('...Done!\n')
-fprintf('Existence and uniqueness? %2.0f and %2.0f\n',eu);
-fprintf('Time to solve linear system: %2.4f seconds\n\n\n',toc(t0))
-toc(tstart)
+if (diagnose)
+    fprintf('Existence and uniqueness? %2.0f and %2.0f\n',eu);
+    fprintf('Time to solve linear system: %2.4f seconds\n\n\n',toc(t0));
+end
+if (diagnose); toc(tstart); end;
 
 %% Step 5: Simulate the model and Calcuate the Den Haan Error
 fprintf('Simulating Model...\n')
@@ -155,7 +162,7 @@ KKpath = sum(aaa .* [gg; gg_End] * da);
 %% ------
 
 fprintf('...Done!\n')
-fprintf('Time to simulate model: %2.4f seconds\n\n\n',toc(t0))
+if (diagnose); fprintf('Time to simulate model: %2.4f seconds\n\n\n',toc(t0)); end;
 
 % Add state-states back in to get values in levels
 varsSS_small = varsSS(4*I:4*I+6,1);
@@ -185,23 +192,23 @@ vAggregateInvestment_reduced = log(vAggregateInvestment) - log(varsSS_small(7));
 % KKpath is the sequence of simulated results using the non-linear dynamics
 % Kpath is the sequence of simulated results using the linearized dynamics
 Drop = 1000;
-DH_Error = 100.0 * max(abs(log(Kpath(1001:end-1)) - log(KKpath(1002:end))))
-DH_Mean = 100.0 * sum(abs(log(Kpath(1001:end-1)) - log(KKpath(1002:end))))/(N - Drop)
+DH_Max = 100.0 * max(abs(log(Kpath(1001:end-1)) - log(KKpath(1002:end))));
+DH_Mean = 100.0 * sum(abs(log(Kpath(1001:end-1)) - log(KKpath(1002:end))))/(N - Drop);
 
-% Simulation path Linear and Non-linear
-figure
-plot(KKpath(2:end),'b--','LineWidth',1.5);
-hold on
-plot(Kpath(1:end-1),'r-','LineWidth',1.5);
-title(['Simulaton Path : REITER : $\sigma =$', num2str(ssigmaTFP,'%.3f')], 'interpreter','latex','FontSize',10);
-xlabel('Simulation time : $T$', 'interpreter','latex','FontSize',10);
-ylabel('Capital : $K$', 'interpreter','latex','FontSize',10); grid;
-legend('Non-Linear','Linear','Location','northwest','interpreter','latex');
+% % Simulation path Linear and Non-linear
+% figure
+% plot(KKpath(2:end),'b--','LineWidth',1.5);
+% hold on
+% plot(Kpath(1:end-1),'r-','LineWidth',1.5);
+% title(['Simulaton Path : REITER : $\sigma =$', num2str(ssigmaTFP,'%.3f')], 'interpreter','latex','FontSize',10);
+% xlabel('Simulation time : $T$', 'interpreter','latex','FontSize',10);
+% ylabel('Capital : $K$', 'interpreter','latex','FontSize',10); grid;
+% legend('Non-Linear','Linear','Location','northwest','interpreter','latex');
 
-toc(tstart)
+if (loadtemp)     
+    disp('done');
+    disp(' ');
+    eval(sprintf('save CT_REITER_sigma%1.4f.mat',ssigmaTFP));
+end
 
-figure;
-plot(vAggregateTFP);
-std(vAggregateTFP) % why?
-
-save Zsim_REITER_rrhoTFP0.75.mat vAggregateTFP Kpath KSS;
+%toc(tstart)

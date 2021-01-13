@@ -1,5 +1,5 @@
 function Kdotnew = outer(ps, muxz, psix, zeta)
-%% outer.m : This code calculates new forecasting rule by XPA algorithm
+%% outer.m : This code calculates a new forecasting rule by XPA algorithm
 %
 %% INPUTS
 %    ps         : the policy function for savings
