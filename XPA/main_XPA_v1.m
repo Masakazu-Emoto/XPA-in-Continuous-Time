@@ -1,18 +1,19 @@
-%% main_XPA_v1.m : This code solves the Krusell and Smith model in continuous time by XPA Algorithm
+%% main_XPA_v1.m : This code solves the Krusell-Smith model in continuous time by the XPA Algorithm as described in
 %
 % Masakazu Emoto and Takeki Sunakawa (2021)
 % "Applying the Explicit Aggregation Algorithm to Heterogeneous Agent Models in Continuous Time"
 %
-% Reference : Fernandez-Villaverde, J., S. Hurtado and G. Nuno (2019, FVHN hereafter)
+% Reference :
+% Fernandez-Villaverde, J., S. Hurtado and G. Nuno (2019, FVHN hereafter)
 % "Solving the Krusell-Smith (1998) model" "Financial Frictions and the Wealth Distribution"
 % Sunakawa, T. (2020, Computational Economics)
 % "Applying the Explicit Aggregation Algorithm to Heterogeneous Macro Models"
 %
-% The original code is downloaded from 
-% https://github.com/jesusfv/financial-frictions/tree/master/KS_LR
+% The original code is downloaded from
+% https://github.com/jesusfv/financial-frictions/tree/master/KS_LR and
 % https://github.com/tkksnk/Xpa
 %
-% Author : Masakazu EMOTO @ Kobe univerisity 2020/10/22 
+% Author : Masakazu EMOTO @ Kobe univerisity 2020/10/22
 % Revised by Takeki Sunakawa 2021/01/05
 % E-mail address : masakazu.emoto@gmail.com
 %
@@ -24,7 +25,7 @@
 %   Step 1 : Solve for the deterministic steady state
 %   Step 2 : XPA algorithm
 %   Step 2-0 : Solve for bias correction terms
-%   Step 2-1 : Inner Loop, Calculate the policy function by taking the forecasting rule (perceived law of motion) as given 
+%   Step 2-1 : Inner Loop, Calculate the policy function by taking the forecasting rule (perceived law of motion) as given
 %   Step 2-2 : Outer Loop, Calculate the forecasting rule by taking the policy function as given
 %   (Step 3 : Solve for the stochastic steady state)
 %   Step 4 : Simulate the model and calculate the Den Haan Error
@@ -32,10 +33,10 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-clear all; 
-% close all; 
+clear all;
+% close all;
 format long;
-% clc; 
+% clc;
 % tic;
 addpath ../common
 
@@ -90,7 +91,7 @@ gridZ = linspace(Zmin,Zmax,intZ)'; dZ = (Zmax - Zmin)/(intZ - 1); ddZ = dZ^2;
 gridZ((intZ+1)/2,1) = Zmean;
 
 % Aggregate Shock Process
-zmu = mu.*(Zmean - gridZ); 
+zmu = mu.*(Zmean - gridZ);
 zsigma = sigma^2.*ones(intZ,1);
 
 % Resize grid
@@ -100,7 +101,7 @@ quadx = zeros(inta,intx,intK,intZ);
 quadK = zeros(inta,intx,intK,intZ);
 quadZ = zeros(inta,intx,intK,intZ);
 
-for ix=1:intx 
+for ix=1:intx
     for ik=1:intK
         for iz=1:intZ
             quada(:,ix,ik,iz)=grida;
@@ -160,35 +161,35 @@ end
 
 for iteration=1:maxitK % Outer loop
     %% -------------------------------------------------- %
-    %% Step 2-1 : Inner Loop, Calculate the policy function by taking the forecasting rule (perceived law of motion) as given 
+    %% Step 2-1 : Inner Loop, Calculate the policy function by taking the forecasting rule (perceived law of motion) as given
     %% -------------------------------------------------- %
     [A1, A1tilde, A3, vss, cs, ps] = inner_v1(Kdot, vss, r, w, UpwindKZ);
     if (diagnose); disp('  Finished solving the HJB Equation'); end;
-    
+
     %% -------------------------------------------------- %
     %% Step 2-2 : Outer Loop, Calculate the forecasting rule by taking the policy function as given
     %% -------------------------------------------------- %
     Kdotnew = outer(ps, muxz, psix, zeta);
     if (diagnose); disp('  Finished calculating the forecasting rule'); end;
-    
+
     if ~isreal(Kdotnew)
         disp('')
         disp('  The matrix for aggregate dynamics is not real')
         disp('')
         break
     end
-    
+
     epsilon = max(max(abs(Kdot - Kdotnew)));
-    
+
     if epsilon > critK
         if (diagnose); fprintf("  iter = %4d, diff = %5.6f\n",iteration, epsilon); end;
     else
         break;
     end
-    
+
     % Update the forecasting rule
     Kdot = relax * Kdot + (1 - relax) * Kdotnew;
-    
+
 end
 
 etime1 = toc(t0);
@@ -218,7 +219,7 @@ t0 = tic;
 [Zsim,Zup,Zdown,zweight] = shockgen(N,mu,sigma,dT,dZ,Zmean,Zmin,Zmax,gridZ,ZshocksN);
 
 % the initial distribution
-muini = gds; 
+muini = gds;
 
 if (KFEnoKZ)
     [XPA_K, XPA_KK] = simulate_v2(Zsim, Zdown, Zup, zweight, muini, A1tilde, Kdotnew);
@@ -264,13 +265,13 @@ if (diagnose)
     ylabel('Capital ($K$)', 'interpreter','latex','FontSize',10);
     xlim([Zmin Zmax]); ylim([Kmin Kmax]);
 
-    intKK = 41; 
-    intZZ = 16; 
+    intKK = 41;
+    intZZ = 16;
     gridKK = linspace(Kmin,Kmax,intKK)';
     gridZZ = linspace(Zmin,Zmax,intZZ)';
     LOM = interp1(gridK,Kdot,gridKK,'spline');
     LOM = interp1(gridZ,LOM',gridZZ,'spline');
-    
+
     figure(2)
     surf(gridZZ,gridKK,LOM');
     title('Forecasting rule : XPA : $\sigma$ = 0.007', 'interpreter','latex','FontSize',10);
@@ -281,7 +282,7 @@ if (diagnose)
 
     % Ploting Sparse Matrix for value function
     figure(3)
-    spy(A3,'b');    
+    spy(A3,'b');
 
     % Plotting Transition Dynamics DSS to SSS
     % figure(4)
@@ -298,7 +299,7 @@ if (diagnose)
     figure(4)
     plot(XPA_K,'b-','LineWidth',1);
     hold on
-    plot(XPA_KK,'r-','LineWidth',1); 
+    plot(XPA_KK,'r-','LineWidth',1);
     hold on
     title('Simulaton Path : XPA : $\sigma$ = 0.007', 'interpreter','latex','FontSize',10);
     xlabel('Simulation time : $T$', 'interpreter','latex','FontSize',10);

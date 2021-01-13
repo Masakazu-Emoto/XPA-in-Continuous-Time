@@ -1,22 +1,21 @@
-%% main_REITER_v1.m : This code modifies Ahn's GitHub code enables to calculate the Den Haan Error
+%% main_REITER_v1.m : These are programs for solving Krusell-Smith model in continuous time by the REITER algorithm as described in
 %
 % Masakazu Emoto and Takeki Sunakawa (2021)
 % "Applying the Explicit Aggregation Algorithm to Heterogeneous Agent Models in Continuous Time"
 %
-% Reference : Ahn et al. (2018, NBER Macroeconomics Annual 32.1, 1-75) 
+% Reference : Ahn et al. (2018, NBER Macroeconomics Annual 32.1, 1-75)
 % "When inequality matters for macro and macro matters for inequality"
 %
-% The code is downloaded from 
+% The original code is downloaded from
 % https://github.com/gregkaplan/phact
 %
-% Author : Masakazu EMOTO @ Kobe univerisity 2020/10/22 
+% Author : Masakazu EMOTO @ Kobe univerisity 2020/10/22
 % Revised by Takeki Sunakawa 2021/01/05
 % E-mail address : masakazu.emoto@gmail.com
 %
-% Uses : autodiff toolbox, phact toolbox (including our simulate_nolin.m for the Den Haan Errors), 
+% Uses : autodiff toolbox, phact toolbox (including our simulate_nolin.m for the Den Haan Errors),
 % set_parameters.m, compute_steady_state.m, equilibrium_conditions.m
-%
-% NOTE: We modify the original simulate.m in the phact toolbox to calculatethe Den Haan Errors. 
+% NOTE: We modify the original simulate.m in the phact toolbox to calculatethe Den Haan Errors.
 %
 %% Summary of the algorithm
 %    Step 0 : Set Parameters
@@ -30,7 +29,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%
-clear all; 
+clear all;
 % close all;
 tstart = tic;
 
@@ -41,7 +40,7 @@ loadtemp = 1;
 % initialize shocks for simulation
 %% NOTE: This is used for calculating the Den Haan Errors with simulate_nolin.m
 T = 2500; N = 10000; rng(100)
-vAggregateShock = randn(1,N+1);    
+vAggregateShock = randn(1,N+1);
 
 %% Step 0: Set Parameters
 % The script sets up parameters relevant for the model
@@ -151,7 +150,7 @@ t0 = tic;
 trans_mat = inv_state_red*from_spline;
 %[simulated,vTime] = simulate(G1,impact,T,N,vAggregateShock,'implicit',trans_mat,4*I:4*I+6);
 %% ------
-%% NOTE: We also calculate "non-linear dynamics" to obtain the Den Haan Errors 
+%% NOTE: We also calculate "non-linear dynamics" to obtain the Den Haan Errors
 [lin_simulated,vTime,non_lin_simulated] = simulate_nolin(G1,impact,T,N,vAggregateShock,'implicit',inv_state_red);
 %[~,~,non_lin_simulated] = simulate_nolin(G1,impact,T,N,vAggregateShock,'implicit',inv_state_red);
 
@@ -171,7 +170,7 @@ varsSS_small = varsSS(4*I:4*I+6,1);
 % vAggregateOutput = lin_simulated(5,:) + varsSS_small(5);
 % vAggregateConsumption = lin_simulated(6,:) + varsSS_small(6);
 % vAggregateInvestment = lin_simulated(7,:) + varsSS_small(7);
-% 
+%
 % Kpath = lin_simulated(2,:) + varsSS_small(2);
 
 vAggregateTFP = lin_simulated(400,:) + varsSS_small(1);
@@ -205,7 +204,7 @@ DH_Mean = 100.0 * sum(abs(log(Kpath(1001:end-1)) - log(KKpath(1002:end))))/(N - 
 % ylabel('Capital : $K$', 'interpreter','latex','FontSize',10); grid;
 % legend('Non-Linear','Linear','Location','northwest','interpreter','latex');
 
-if (loadtemp)     
+if (loadtemp)
     disp('done');
     disp(' ');
     eval(sprintf('save CT_REITER_sigma%1.4f.mat',ssigmaTFP));

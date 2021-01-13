@@ -1,4 +1,4 @@
-%% main_KS_v1.m : This code solves the Krusell and Smith model in continuous time by KS Algorithm
+%% main_KS_v1.m : This code solves the Krusell and Smith model in continuous time by the KS Algorithm as described in
 %
 % Masakazu Emoto and Takeki Sunakawa (2021)
 % "Applying the Explicit Aggregation Algorithm to Heterogeneous Agent Models in Continuous Time"
@@ -6,10 +6,10 @@
 % Reference : Fernandez-Villaverde, J., S. Hurtado and G. Nuno (2019, FVHN hereafter)
 % "Solving the Krusell-Smith (1998) model" "Financial Frictions and the Wealth Distribution"
 %
-% The original code is downloaded from 
+% The original code is downloaded from
 % https://github.com/jesusfv/financial-frictions/tree/master/KS_LR
 %
-% Author : Masakazu EMOTO @ Kobe univerisity 2020/10/22 
+% Author : Masakazu EMOTO @ Kobe univerisity 2020/10/22
 % Revised by Takeki Sunakawa 2021/01/05
 % E-mail address : masakazu.emoto@gmail.com
 %
@@ -20,7 +20,7 @@
 %   Step 0 : Set parameters
 %   Step 1 : Solve for the deterministic steady state
 %   Step 2 : KS algorithm
-%   Step 2-1 : Inner Loop, Calculate the policy function by taking the forecasting rule (perceived law of motion) as given 
+%   Step 2-1 : Inner Loop, Calculate the policy function by taking the forecasting rule (perceived law of motion) as given
 %   Step 2-2 : Outer Loop (1), Simulate the path of aggregate capital
 %   Step 2-3 : Outer Loop (2), Solve for the forecasting rule by linear regression of simulated data
 %   (Step 3 : Solve for the stochastic steady state)
@@ -29,10 +29,10 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-clear all; 
-% close all; 
+clear all;
+% close all;
 format long;
-% clc; 
+% clc;
 % tic;
 addpath ../common
 
@@ -87,7 +87,7 @@ gridZ = linspace(Zmin,Zmax,intZ)'; dZ = (Zmax - Zmin)/(intZ - 1); ddZ = dZ^2;
 gridZ((intZ+1)/2,1) = Zmean;
 
 % Aggregate Shock Process
-zmu = mu.*(Zmean - gridZ); 
+zmu = mu.*(Zmean - gridZ);
 zsigma = sigma^2.*ones(intZ,1);
 
 % Resize grid
@@ -137,7 +137,7 @@ if (diagnose); disp(' '); end;
 t0 = tic;
 
 % Initial guess for the forecasting rule: the same as in FVHN
-Kdot = zeros(intK,intZ); 
+Kdot = zeros(intK,intZ);
 
 % Initial guess of vss, r, and w for the inner loop (used in inner.m)
 %% NOTE: r and w are functions of grids for K and Z
@@ -154,15 +154,15 @@ end
 
 % Initial distribution from the deterministic steady state
 muini = gds;
-    
+
 % Inner loop and outer loop
 for iteration=1:maxitK % Outer loop
     %% -------------------------------------------------- %
-    %% Step 2-1 : Inner Loop, Calculate the policy function by taking the forecasting rule (perceived law of motion) as given 
+    %% Step 2-1 : Inner Loop, Calculate the policy function by taking the forecasting rule (perceived law of motion) as given
     %% -------------------------------------------------- %
     [A1, A1tilde, A3, vss, cs, ps] = inner_v1(Kdot, vss, r, w, UpwindKZ);
     if (diagnose); disp('  Finished solving the HJB Equation'); end;
-    
+
     %% -------------------------------------------------- %
     %% Step 2-2 : Outer Loop (1), Simulate the path of aggregate capital
     %% -------------------------------------------------- %
@@ -172,7 +172,7 @@ for iteration=1:maxitK % Outer loop
         Ksim = simulate_v2(Zsim, Zdown, Zup, zweight, muini, A1);
     end
     if (diagnose); disp('  Finished simulating aggregate capital'); end;
-    
+
     %% -------------------------------------------------- %
     %% Step 2-3 : Outer Loop (2), Solve for the forecasting rule by linear regression of simulated data
     %% -------------------------------------------------- %
@@ -187,12 +187,12 @@ for iteration=1:maxitK % Outer loop
     %X3 = X1.*X2;   % log(K(t-1))*Z(t-1)
     X = [X0 X1 X2];
     %X = [X0 X1 X2 X3];
-    
+
     B = (X'*X)\(X'*Y);
     Y_LR = X * B;
     Y_Stad = (mean(Y - Y_LR).^2).^0.5;
     Y_R2 = 1 - (sum((Y - Y_LR).^2))/(sum((Y - mean(Y)).^2));
-    
+
     % Use the coefficients to calculate the forecasting rule on HJB grid
     X1mm = squeeze(quadK(1,1,:,:)) ;
     X2mm = squeeze(quadZ(1,1,:,:)) ;
@@ -200,30 +200,30 @@ for iteration=1:maxitK % Outer loop
     X1m = reshape(X1mm,[intK*intZ,1]);
     X2m = reshape(X2mm,[intK*intZ,1]);
     X0m = ones(size(X1m));
-    
-    X1m=log(X1m); 
+
+    X1m=log(X1m);
     %X3m = X1m.*X2m;
     X_LR = [X0m X1m X2m];
     %X_LR = [X0m X1m X2m X3m];
-    
+
     Kdotnew = X_LR*B;
     Kdotnew = reshape(Kdotnew, size(Kdot)); % Same value ! ????????
-    
+
     if ~isreal(Kdotnew)
         disp('')
         disp('  The matrix for aggregate dynamics is not real')
         disp('')
         break
     end
-    
+
     epsilon = max(max(abs(Kdot - Kdotnew)));
-    
+
     if epsilon > critK
         if (diagnose); fprintf("  iter = %4d, diff = %5.6f, R2 = %5.6f\n",iteration, epsilon, Y_R2); end;
     else
         break;
     end
-    
+
     % Update the forecasting rule
     Kdot = (1 - relax_dot) * Kdot + relax_dot * Kdotnew;
     relax_dot = relax_dot * relax1 + relax2;
@@ -245,7 +245,7 @@ if (diagnose); fprintf('Time to solve model = %2.4f\n',etime1); end;
 % toc;
 
 % disp('Stochastic steady state by KS Algorithm')
-% disp(Kss(end)) 
+% disp(Kss(end))
 
 %% -------------------------------------------------- %
 %% Step 4 : Simulate the model and calculate the Den Haan Error
@@ -288,7 +288,7 @@ if (loadtemp)
         else % UpwindKZ=0, KFEnoKZ=1
             eval(sprintf('save CT_KS_sigma%1.4f_kub%1.2f_klb%1.2f_intK%d_intZ%d_FVHN1.mat',sigma,kub,klb,intK,intZ));
         end
-    else       
+    else
         if (~KFEnoKZ) % UpwindKZ=1, KFEnoKZ=0
             eval(sprintf('save CT_KS_sigma%1.4f_kub%1.2f_klb%1.2f_intK%d_intZ%d_FVHN2.mat',sigma,kub,klb,intK,intZ));
         else
@@ -308,13 +308,13 @@ if (diagnose)
     ylabel('capital ($K$)', 'interpreter','latex','FontSize',14);
     xlim([Zmin Zmax]); ylim([Kmin Kmax]);
 
-    intKK = 41; 
-    intZZ = 16; 
+    intKK = 41;
+    intZZ = 16;
     gridKK = linspace(Kmin,Kmax,intKK)';
     gridZZ = linspace(Zmin,Zmax,intZZ)';
     LOM = interp1(gridK,Kdot,gridKK,'spline');
     LOM = interp1(gridZ,LOM',gridZZ,'spline');
-    
+
     figure(2)
     surf(gridZZ,gridKK,LOM');
     title('Forecasting rule : KS : $\sigma$ = 0.007', 'interpreter','latex','FontSize',10);
@@ -325,7 +325,7 @@ if (diagnose)
 
     % Ploting Sparse Matrix for value function
     figure(3)
-    spy(A3,'b');    
+    spy(A3,'b');
 
     % Plot Transition Dynamics from DSS to SSS
     % figure(4)
@@ -342,7 +342,7 @@ if (diagnose)
     figure(4)
     plot(KS_K,'b-','LineWidth',1);
     hold on
-    plot(KS_KK,'r-','LineWidth',1); 
+    plot(KS_KK,'r-','LineWidth',1);
     title('Simulaton Path : KS : $\sigma$ = 0.007', 'interpreter','latex','FontSize',10);
     xlabel('Simulation time : $T$', 'interpreter','latex','FontSize',10);
     ylabel('Capital : $K$', 'interpreter','latex','FontSize',10);
