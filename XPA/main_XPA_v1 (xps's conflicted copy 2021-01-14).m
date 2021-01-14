@@ -40,8 +40,8 @@ format long;
 % tic;
 addpath ../common
 
-diagnose = 0;
-loadtemp = 1;
+diagnose = 1;
+loadtemp = 0;
 
 %% NOTE: This code is based on the ones written by FVHN. However, we extend their original code in the following two dimensions:
 UpwindKZ = 1; % (1) We use the upwind scheme not only individual wealth, a, but also K and Z.
@@ -72,8 +72,10 @@ fprintf('Computing steady state...\n')
 %     Kmax = 1.05*Kds; Kmin = 0.95*Kds;
 % end
 % if sigma >= 0.05
-    kub = 0.2;
-    klb = 0.2;
+%     kub = 0.2;
+%     klb = 0.2;
+    kub = 0.05;
+    klb = 0.05;
     Kmax = (1.0+kub)*Kds; Kmin = (1.0-klb)*Kds;
 % elseif sigma >= 0.02
 % % elseif sigma >= 0.03
@@ -216,7 +218,7 @@ disp('Simulating the model and Calculating Den Haan Error')
 t0 = tic;
 
 % the sequence of aggregate productivity
-[Zsim,Zup,Zdown,zweight] = shockgen(N,mu,sigma,dT,dZ,Zmean,Zmin,Zmax,gridZ,ZshocksN);
+[Zsim,Zup,Zdown,zweight] = shockgen_mmu(N,mu,sigma,dT,dZ,Zmean,Zmin,Zmax,gridZ,ZshocksN);
 
 % the initial distribution
 muini = gds;
@@ -251,11 +253,7 @@ if (diagnose); fprintf('Time to simulate model = %2.4f\n',etime2); end;
 if (loadtemp)
     disp('done');
     disp(' ');
-    if (mu==0.25)
-        eval(sprintf('save CT_XPA_sigma%1.4f_kub%1.2f_klb%1.2f_intK%d_intZ%d.mat',sigma,kub,klb,intK,intZ));
-    else % robustness for mu
-        eval(sprintf('save CT_XPA_mu%1.2f_sigma%1.4f_kub%1.2f_klb%1.2f_intK%d_intZ%d.mat',mu,sigma,kub,klb,intK,intZ));
-    end
+    eval(sprintf('save CT_XPA_sigma%1.4f_kub%1.2f_klb%1.2f_intK%d_intZ%d.mat',sigma,kub,klb,intK,intZ));
 end
 
 if (diagnose)

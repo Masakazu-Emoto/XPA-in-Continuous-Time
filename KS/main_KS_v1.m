@@ -40,7 +40,7 @@ diagnose = 0; % display diagnoses and graphs
 loadtemp = 1; % load temp.mat and parameter sigma; turn on when executing run.m
 
 %% NOTE: This code is based on the ones written by FVHN. However, we extend their original code in the following two dimensions:
-UpwindKZ = 0; % (1) We use the upwind scheme not only individual wealth, a, but also K and Z.
+UpwindKZ = 1; % (1) We use the upwind scheme not only individual wealth, a, but also K and Z.
 KFEnoKZ  = 1; % (2) We exclude the direct effect of aggregate variables K and Z on the matrix
 % A_lm in their note when we solve the KF equation (there is the indirect effect through r and w).
 
@@ -282,18 +282,22 @@ if (diagnose); fprintf('Time to simulate model = %2.4f\n',etime2); end;
 if (loadtemp)
     disp('done');
     disp(' ');
-    if (~UpwindKZ)
-        if (~KFEnoKZ)
-            eval(sprintf('save CT_KS_sigma%1.4f_kub%1.2f_klb%1.2f_intK%d_intZ%d_FVHN.mat',sigma,kub,klb,intK,intZ));
-        else % UpwindKZ=0, KFEnoKZ=1
-            eval(sprintf('save CT_KS_sigma%1.4f_kub%1.2f_klb%1.2f_intK%d_intZ%d_FVHN1.mat',sigma,kub,klb,intK,intZ));
-        end
-    else
-        if (~KFEnoKZ) % UpwindKZ=1, KFEnoKZ=0
-            eval(sprintf('save CT_KS_sigma%1.4f_kub%1.2f_klb%1.2f_intK%d_intZ%d_FVHN2.mat',sigma,kub,klb,intK,intZ));
+    if (mu==0.25)
+        if (~UpwindKZ)
+            if (~KFEnoKZ)   % UpwindKZ=0, KFEnoKZ=0
+                eval(sprintf('save CT_KS_sigma%1.4f_kub%1.2f_klb%1.2f_intK%d_intZ%d_FVHN.mat',sigma,kub,klb,intK,intZ));
+            else            % UpwindKZ=0, KFEnoKZ=1
+                eval(sprintf('save CT_KS_sigma%1.4f_kub%1.2f_klb%1.2f_intK%d_intZ%d_FVHN1.mat',sigma,kub,klb,intK,intZ));
+            end
         else
-            eval(sprintf('save CT_KS_sigma%1.4f_kub%1.2f_klb%1.2f_intK%d_intZ%d.mat',sigma,kub,klb,intK,intZ));
+            if (~KFEnoKZ)   % UpwindKZ=1, KFEnoKZ=0
+                eval(sprintf('save CT_KS_sigma%1.4f_kub%1.2f_klb%1.2f_intK%d_intZ%d_FVHN2.mat',sigma,kub,klb,intK,intZ));
+            else            % UpwindKZ=1, KFEnoKZ=1
+                eval(sprintf('save CT_KS_sigma%1.4f_kub%1.2f_klb%1.2f_intK%d_intZ%d.mat',sigma,kub,klb,intK,intZ));
+            end
         end
+    else % robustness for mu
+        eval(sprintf('save CT_KS_mu%1.2f_sigma%1.4f_kub%1.2f_klb%1.2f_intK%d_intZ%d.mat',mu,sigma,kub,klb,intK,intZ));
     end
 end
 

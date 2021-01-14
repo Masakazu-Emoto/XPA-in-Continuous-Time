@@ -207,7 +207,11 @@ DH_Mean = 100.0 * sum(abs(log(Kpath(1001:end-1)) - log(KKpath(1002:end))))/(N - 
 if (loadtemp)
     disp('done');
     disp(' ');
-    eval(sprintf('save CT_REITER_sigma%1.4f.mat',ssigmaTFP));
+    if (1-rrhoTFP==0.25)
+        eval(sprintf('save CT_REITER_sigma%1.4f.mat',ssigmaTFP));
+    else % robustness for mu
+        eval(sprintf('save CT_REITER_mu%1.2f_sigma%1.4f.mat',1-rrhoTFP,ssigmaTFP));
+    end    
 end
 
 %toc(tstart)

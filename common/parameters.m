@@ -28,8 +28,9 @@ lambda2 = (lambda1 / (x(2) * 0.93 - x(1))*(x(2) - x(2) * 0.93));
 la = [lambda1, lambda2];
 
 % Aggregate shock for TFP (Ornstein-Uhlenbeck process)
-mu = 0.25;        % Mean
-sigma = 0.007; %0.05;     % Variance 
+%mu = 0.25;        % Mean
+mu = 0.75;         % Mean for robustness
+sigma = 0.007;    % Variance 
 
 % Tax system (from Ahn et al., 2018)
 com = 0.15; 
