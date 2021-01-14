@@ -15,12 +15,12 @@ This repository includes programs for solving the Krusell-Smith model in continu
   ```
   in `main_XPA_v1.m` and `main_KS_v1.m`.
 
-  2. run `run.m` in each XPA, KS, and REITER folders, which solves model for different values of the standard deviation of aggregate productivity by calling `main_XPA_v1.m`, `main_KS_v1.m`, or `main_REITER_v1.m`.
+  2. run `run.m` in each XPA, KS, and REITER folders, which solves model for different values of the standard deviation of aggregate productivity by calling `main_XPA_v1.m`, `main_KS_v1.m`, or `main_REITER_v1.m`. It may take time for a while especially for KS. Also note that `UpwindKZ = 0` does not work for XPA.
 
-  3. Then run `Figure1and2.m` `Figure3.m` `Table3.m` to replicate figures and tables in the paper.
+  3. Then run `Figure1and2.m` `Figure3.m` `Table3.m` to replicate the figures and tables in the paper.
 
-* For robustness checks in Appendix, you may want to change the above meta parameters in `main_XPA_v1.m` and `main_KS_v1.m` and rerun `run.m`
+* For the robustness checks in Appendix, you may want to change the above meta parameters in `main_XPA_v1.m` and `main_KS_v1.m` and rerun `run.m`
 
 For questions about the programs, please send an email to: Masakazu Emoto <masakazu.emoto@gmail.com>
 
-The source code is licensed MIT. The website content is licensed CC BY 4.0, see LICENSE.
+The source code is licensed MIT, see LICENSE.
