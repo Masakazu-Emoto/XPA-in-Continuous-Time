@@ -13,8 +13,8 @@ aalpha = 0.36;    % capital share
 global ssigmaTFP rrhoTFP
 ssigmaTFP = 0.007;   % standard deviation of TFP shock
 % NOTE: rrhoTFP = 1-mu
-%rrhoTFP = 0.25;     % quarterly autocorrelation of TFP shock 
-rrhoTFP = 1-0.75;     % quarterly autocorrelation of TFP shock 
+rrhoTFP = 1-0.25;     % quarterly autocorrelation of TFP shock 
+%rrhoTFP = 1-0.75;     % quarterly autocorrelation of TFP shock 
 
 % Idiosyncratic shocks
 global z

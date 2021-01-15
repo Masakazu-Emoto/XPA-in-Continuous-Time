@@ -28,8 +28,8 @@ lambda2 = (lambda1 / (x(2) * 0.93 - x(1))*(x(2) - x(2) * 0.93));
 la = [lambda1, lambda2];
 
 % Aggregate shock for TFP (Ornstein-Uhlenbeck process)
-%mu = 0.25;        % Mean
-mu = 0.75;         % Mean for robustness
+mu = 0.25;        % Mean
+%mu = 0.75;         % Mean for robustness
 sigma = 0.007;    % Variance 
 
 % Tax system (from Ahn et al., 2018)
@@ -61,15 +61,16 @@ relax2 = 0.005;
 %% -------------------------------------------------- %
 global inta amin amax grida da aa aaa xx xxx Aswitch
 global Kmax Kmin intK intKK gridK dK
-global Zmax Zmin Zmean intZ zmu zsigma gridZ dZ ddZ
+global Zmax Zmin Zmean intZ zmu zsigma gridZ dZ ddZ zm
 
 inta = 100; 
 amin = 0; 
 amax = 100;
-intK = 3;
-intZ = 3; 
-% intK = 5;
-% intZ = 5;
+% intK = 3;
+% intZ = 3; 
+zm = 2.5; %4;
+intK = 3; %5;
+intZ = 3; %5;
 
 % Individual wealth grid
 grida = linspace(amin,amax,inta)';

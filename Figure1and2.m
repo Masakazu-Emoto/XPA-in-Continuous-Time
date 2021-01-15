@@ -1,12 +1,12 @@
 % Figure 1
 clear all;
 
-epsprint = 1;
+epsprint = 0;
 
-load ./XPA/CT_XPA_sigma0.0070_kub0.20_klb0.20_intK3_intZ3.mat;
+load ./XPA/CT_XPA_sigma0.0070_kub0.20_klb0.20_zm3.00_intK3_intZ3.mat;
 XPA_LOM = Kdot;
 
-load ./KS/CT_KS_sigma0.0070_kub0.20_klb0.20_intK3_intZ3.mat;
+load ./KS/CT_KS_sigma0.0070_kub0.20_klb0.20_zm3.00_intK3_intZ3.mat;
 KS_LOM = Kdot;
 
 figure;

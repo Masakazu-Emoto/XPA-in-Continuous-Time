@@ -42,6 +42,7 @@ addpath ../common
 
 diagnose = 0;
 loadtemp = 1;
+savetime = 0;
 
 %% NOTE: This code is based on the ones written by FVHN. However, we extend their original code in the following two dimensions:
 UpwindKZ = 1; % (1) We use the upwind scheme not only individual wealth, a, but also K and Z.
@@ -86,7 +87,8 @@ fprintf('Computing steady state...\n')
 gridK = linspace(Kmin,Kmax,intK)'; dK = (Kmax - Kmin)/(intK - 1);
 
 % Aggregate productivity grid
-Zmax = 2*sigma; Zmin = -2*sigma; Zmean = 0;
+% zm = 4;
+Zmax = zm*sigma; Zmin = -zm*sigma; Zmean = 0;
 gridZ = linspace(Zmin,Zmax,intZ)'; dZ = (Zmax - Zmin)/(intZ - 1); ddZ = dZ^2;
 gridZ((intZ+1)/2,1) = Zmean;
 
@@ -209,106 +211,112 @@ if (diagnose); fprintf('Time to solve model = %2.4f\n',etime1); end;
 % disp('Stochastic steady state by XPA Algorithm')
 % disp(Kss(end))
 
-%% -------------------------------------------------- %
-%% Step 4 : Simulate the model and Calcuate the Den Haan Error
-%% -------------------------------------------------- %
-disp('Simulating the model and Calculating Den Haan Error')
-t0 = tic;
+if (~savetime)
+    %% -------------------------------------------------- %
+    %% Step 4 : Simulate the model and Calcuate the Den Haan Error
+    %% -------------------------------------------------- %
+    disp('Simulating the model and Calculating Den Haan Error')
+    t0 = tic;
 
-% the sequence of aggregate productivity
-[Zsim,Zup,Zdown,zweight] = shockgen(N,mu,sigma,dT,dZ,Zmean,Zmin,Zmax,gridZ,ZshocksN);
+    % the sequence of aggregate productivity
+    [Zsim,Zup,Zdown,zweight] = shockgen(N,mu,sigma,dT,dZ,Zmean,Zmin,Zmax,gridZ,ZshocksN);
 
-% the initial distribution
-muini = gds;
+    % the initial distribution
+    muini = gds;
 
-if (KFEnoKZ)
-    [XPA_K, XPA_KK] = simulate_v2(Zsim, Zdown, Zup, zweight, muini, A1tilde, Kdotnew);
-else
-    [XPA_K, XPA_KK] = simulate_v2(Zsim, Zdown, Zup, zweight, muini, A1, Kdotnew);
-end
-
-% disp([max(XPA_K) max(gridK) min(XPA_K) min(gridK)]);
-if (max(XPA_K)>=max(gridK))
-    disp('WARNING: The maximum of simulated K is above that of grid K');
-elseif (min(XPA_K)<=min(gridK))
-    disp('WARNING: The minimum of simulated K is below that of grid K');
-end
-
-% XPA_KK is the sequence of simulated results using the forecasting rule only
-% XPA_K is the sequence of simulated results using the forecasting rule and the HJB equation
-DH_Max = 100.0 * max(abs(log(XPA_KK(Drop+1:end)) - log(XPA_K(Drop+1:end))));
-DH_Mean = 100.0 * sum(abs(log(XPA_KK(Drop+1:end)) - log(XPA_K(Drop+1:end))))/(N - Drop);
-
-if (diagnose)
-    std(Zsim)
-    sigma/sqrt(1-(1-mu)^2) % check with the theoretical moment
-end
-
-etime2 = toc(t0);
-fprintf('...Done!\n');
-if (diagnose); fprintf('Time to simulate model = %2.4f\n',etime2); end;
-
-if (loadtemp)
-    disp('done');
-    disp(' ');
-    if (mu==0.25)
-        eval(sprintf('save CT_XPA_sigma%1.4f_kub%1.2f_klb%1.2f_intK%d_intZ%d.mat',sigma,kub,klb,intK,intZ));
-    else % robustness for mu
-        eval(sprintf('save CT_XPA_mu%1.2f_sigma%1.4f_kub%1.2f_klb%1.2f_intK%d_intZ%d.mat',mu,sigma,kub,klb,intK,intZ));
+    if (KFEnoKZ)
+        [XPA_K, XPA_KK] = simulate_v2(Zsim, Zdown, Zup, zweight, muini, A1tilde, Kdotnew);
+    else
+        [XPA_K, XPA_KK] = simulate_v2(Zsim, Zdown, Zup, zweight, muini, A1, Kdotnew);
     end
+
+    % disp([max(XPA_K) max(gridK) min(XPA_K) min(gridK)]);
+    if (max(XPA_K)>=max(gridK))
+        disp('WARNING: The maximum of simulated K is above that of grid K');
+    elseif (min(XPA_K)<=min(gridK))
+        disp('WARNING: The minimum of simulated K is below that of grid K');
+    end
+
+    % XPA_KK is the sequence of simulated results using the forecasting rule only
+    % XPA_K is the sequence of simulated results using the forecasting rule and the HJB equation
+    DH_Max = 100.0 * max(abs(log(XPA_KK(Drop+1:end)) - log(XPA_K(Drop+1:end))));
+    DH_Mean = 100.0 * sum(abs(log(XPA_KK(Drop+1:end)) - log(XPA_K(Drop+1:end))))/(N - Drop);
+
+    if (diagnose)
+        std(Zsim)
+        sigma/sqrt(1-(1-mu)^2) % check with the theoretical moment
+    end
+
+    etime2 = toc(t0);
+    fprintf('...Done!\n');
+    if (diagnose); fprintf('Time to simulate model = %2.4f\n',etime2); end;
+
+    if (loadtemp)
+        disp('done');
+        disp(' ');
+        if (mu==0.25)
+            eval(sprintf('save CT_XPA_sigma%1.4f_kub%1.2f_klb%1.2f_zm%1.2f_intK%d_intZ%d.mat gridK gridZ A3 Kdot XPA_K XPA_KK DH_Max DH_Mean',sigma,kub,klb,zm,intK,intZ));
+        else % robustness for mu
+            eval(sprintf('save CT_XPA_mu%1.2f_sigma%1.4f_kub%1.2f_klb%1.2f_zm%1.2f_intK%d_intZ%d.mat gridK gridZ A3 Kdot KS_K KS_KK DH_Max DH_Mean',mu,sigma,kub,klb,zm,intK,intZ));
+        end
+    end
+
+    if (diagnose)
+        %% -------------------------------------------------- %
+        %% Step 5 : Plot graphs
+        %% -------------------------------------------------- %
+        figure(1)
+        surf(gridZ,gridK,Kdot);
+        title('The aggregate law of motion, PLM : XPA', 'interpreter','latex','FontSize',10);
+        xlabel('Shock ($Z$)', 'interpreter','latex','FontSize',10);
+        ylabel('Capital ($K$)', 'interpreter','latex','FontSize',10);
+        xlim([Zmin Zmax]); ylim([Kmin Kmax]);
+
+        intKK = 41;
+        intZZ = 16;
+        gridKK = linspace(Kmin,Kmax,intKK)';
+        gridZZ = linspace(Zmin,Zmax,intZZ)';
+        LOM = interp1(gridK,Kdot,gridKK,'spline');
+        LOM = interp1(gridZ,LOM',gridZZ,'spline');
+
+        figure(2)
+        surf(gridZZ,gridKK,LOM');
+        title('Forecasting rule : XPA : $\sigma$ = 0.007', 'interpreter','latex','FontSize',10);
+        xlabel('Shock : $Z$', 'interpreter','latex','FontSize',10);
+        ylabel('Capital : $K$', 'interpreter','latex','FontSize',10);
+        zlabel('$\dot{K}$', 'interpreter','latex','FontSize',10);
+        xlim([Zmin Zmax]); ylim([Kmin Kmax]);
+
+        % Ploting Sparse Matrix for value function
+        figure(3)
+        spy(A3,'b');
+
+        % Plotting Transition Dynamics DSS to SSS
+        % figure(4)
+        % plot(Kss,'b-','LineWidth',1);
+        % hold on
+        % plot(Kss(1,1),'bo','MarkerEdgeColor','b','MarkerFaceColor','b','LineWidth',1);
+        % hold on
+        % plot(max(size(Kss)),Kss(end,1),'bo','MarkerEdgeColor','b','MarkerFaceColor','b');
+        % title('Transition Dynamics the DSS to the SSS : $\sigma$ = 0.07', 'interpreter','latex','FontSize',10);
+        % xlabel('Simulation time : $T$', 'interpreter','latex','FontSize',10);
+        % ylabel('Capital : $K$', 'interpreter','latex','FontSize',10); grid;
+
+        % Plotting Simulaion Path for aggregate capital
+        figure(4)
+        plot(XPA_K,'b-','LineWidth',1);
+        hold on
+        plot(XPA_KK,'r-','LineWidth',1);
+        hold on
+        title('Simulaton Path : XPA : $\sigma$ = 0.007', 'interpreter','latex','FontSize',10);
+        xlabel('Simulation time : $T$', 'interpreter','latex','FontSize',10);
+        ylabel('Capital : $K$', 'interpreter','latex','FontSize',10);
+        legend('$K^*_{t}$', '$\tilde{K}_{t}$','Location','northwest','interpreter','latex'); grid;
+        xlim([1 N]);
+
+    end
+    
 end
 
-if (diagnose)
-    %% -------------------------------------------------- %
-    %% Step 5 : Plot graphs
-    %% -------------------------------------------------- %
-    figure(1)
-    surf(gridZ,gridK,Kdot);
-    title('The aggregate law of motion, PLM : XPA', 'interpreter','latex','FontSize',10);
-    xlabel('Shock ($Z$)', 'interpreter','latex','FontSize',10);
-    ylabel('Capital ($K$)', 'interpreter','latex','FontSize',10);
-    xlim([Zmin Zmax]); ylim([Kmin Kmax]);
+if (savetime); save etime.mat etime1; end;
 
-    intKK = 41;
-    intZZ = 16;
-    gridKK = linspace(Kmin,Kmax,intKK)';
-    gridZZ = linspace(Zmin,Zmax,intZZ)';
-    LOM = interp1(gridK,Kdot,gridKK,'spline');
-    LOM = interp1(gridZ,LOM',gridZZ,'spline');
-
-    figure(2)
-    surf(gridZZ,gridKK,LOM');
-    title('Forecasting rule : XPA : $\sigma$ = 0.007', 'interpreter','latex','FontSize',10);
-    xlabel('Shock : $Z$', 'interpreter','latex','FontSize',10);
-    ylabel('Capital : $K$', 'interpreter','latex','FontSize',10);
-    zlabel('$\dot{K}$', 'interpreter','latex','FontSize',10);
-    xlim([Zmin Zmax]); ylim([Kmin Kmax]);
-
-    % Ploting Sparse Matrix for value function
-    figure(3)
-    spy(A3,'b');
-
-    % Plotting Transition Dynamics DSS to SSS
-    % figure(4)
-    % plot(Kss,'b-','LineWidth',1);
-    % hold on
-    % plot(Kss(1,1),'bo','MarkerEdgeColor','b','MarkerFaceColor','b','LineWidth',1);
-    % hold on
-    % plot(max(size(Kss)),Kss(end,1),'bo','MarkerEdgeColor','b','MarkerFaceColor','b');
-    % title('Transition Dynamics the DSS to the SSS : $\sigma$ = 0.07', 'interpreter','latex','FontSize',10);
-    % xlabel('Simulation time : $T$', 'interpreter','latex','FontSize',10);
-    % ylabel('Capital : $K$', 'interpreter','latex','FontSize',10); grid;
-
-    % Plotting Simulaion Path for aggregate capital
-    figure(4)
-    plot(XPA_K,'b-','LineWidth',1);
-    hold on
-    plot(XPA_KK,'r-','LineWidth',1);
-    hold on
-    title('Simulaton Path : XPA : $\sigma$ = 0.007', 'interpreter','latex','FontSize',10);
-    xlabel('Simulation time : $T$', 'interpreter','latex','FontSize',10);
-    ylabel('Capital : $K$', 'interpreter','latex','FontSize',10);
-    legend('$K^*_{t}$', '$\tilde{K}_{t}$','Location','northwest','interpreter','latex'); grid;
-    xlim([1 N]);
-
-end

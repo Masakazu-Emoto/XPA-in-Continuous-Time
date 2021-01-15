@@ -35,6 +35,7 @@ tstart = tic;
 
 diagnose = 0;
 loadtemp = 1;
+savetime = 0;
 
 %% Set options for this example run
 % initialize shocks for simulation
@@ -84,6 +85,7 @@ varsSS(4*I+6,1) = ddelta * KSS;
 %    documentation of relevant syntax check <<https://github.com/sehyoun/MATLABAutoDiff>>
 fprintf('Taking derivatives of equilibrium conditions...\n')
 t0 = tic;
+t1 = tic;
 
 % Prepare automatic differentiation
 vars = zeros(2*nVars+nEErrors+1,1);
@@ -141,77 +143,86 @@ if (diagnose)
     fprintf('Existence and uniqueness? %2.0f and %2.0f\n',eu);
     fprintf('Time to solve linear system: %2.4f seconds\n\n\n',toc(t0));
 end
-if (diagnose); toc(tstart); end;
+%if (diagnose); toc(tstart); end;
+etime1 = toc(t1);
+%fprintf('...Done!\n');
+if (diagnose); fprintf('Time to solve model = %2.4f\n',etime1); end;
 
+if (~savetime)
 %% Step 5: Simulate the model and Calcuate the Den Haan Error
-fprintf('Simulating Model...\n')
-t0 = tic;
+    
+    fprintf('Simulating Model...\n')
+    t0 = tic;
 
-trans_mat = inv_state_red*from_spline;
-%[simulated,vTime] = simulate(G1,impact,T,N,vAggregateShock,'implicit',trans_mat,4*I:4*I+6);
-%% ------
-%% NOTE: We also calculate "non-linear dynamics" to obtain the Den Haan Errors
-[lin_simulated,vTime,non_lin_simulated] = simulate_nolin(G1,impact,T,N,vAggregateShock,'implicit',inv_state_red);
-%[~,~,non_lin_simulated] = simulate_nolin(G1,impact,T,N,vAggregateShock,'implicit',inv_state_red);
+    trans_mat = inv_state_red*from_spline;
+    %[simulated,vTime] = simulate(G1,impact,T,N,vAggregateShock,'implicit',trans_mat,4*I:4*I+6);
+    %% ------
+    %% NOTE: We also calculate "non-linear dynamics" to obtain the Den Haan Errors
+    [lin_simulated,vTime,non_lin_simulated] = simulate_nolin(G1,impact,T,N,vAggregateShock,'implicit',inv_state_red);
+    %[~,~,non_lin_simulated] = simulate_nolin(G1,impact,T,N,vAggregateShock,'implicit',inv_state_red);
 
-% Non-linear dynamics
-gg = non_lin_simulated(2*I+1:4*I-1,:) + ggSS(1:end-1);
-gg_End = 1/da - sum(gg);
-KKpath = sum(aaa .* [gg; gg_End] * da);
-%% ------
+    % Non-linear dynamics
+    gg = non_lin_simulated(2*I+1:4*I-1,:) + ggSS(1:end-1);
+    gg_End = 1/da - sum(gg);
+    KKpath = sum(aaa .* [gg; gg_End] * da);
+    %% ------
 
-fprintf('...Done!\n')
-if (diagnose); fprintf('Time to simulate model: %2.4f seconds\n\n\n',toc(t0)); end;
+    fprintf('...Done!\n')
+    if (diagnose); fprintf('Time to simulate model: %2.4f seconds\n\n\n',toc(t0)); end;
 
-% Add state-states back in to get values in levels
-varsSS_small = varsSS(4*I:4*I+6,1);
-%% NOTE: indices are changed
-% vAggregateTFP = lin_simulated(1,:) + varsSS_small(1);
-% vAggregateOutput = lin_simulated(5,:) + varsSS_small(5);
-% vAggregateConsumption = lin_simulated(6,:) + varsSS_small(6);
-% vAggregateInvestment = lin_simulated(7,:) + varsSS_small(7);
-%
-% Kpath = lin_simulated(2,:) + varsSS_small(2);
+    % Add state-states back in to get values in levels
+    varsSS_small = varsSS(4*I:4*I+6,1);
+    %% NOTE: indices are changed
+    % vAggregateTFP = lin_simulated(1,:) + varsSS_small(1);
+    % vAggregateOutput = lin_simulated(5,:) + varsSS_small(5);
+    % vAggregateConsumption = lin_simulated(6,:) + varsSS_small(6);
+    % vAggregateInvestment = lin_simulated(7,:) + varsSS_small(7);
+    %
+    % Kpath = lin_simulated(2,:) + varsSS_small(2);
 
-vAggregateTFP = lin_simulated(400,:) + varsSS_small(1);
-vAggregateOutput = lin_simulated(404,:) + varsSS_small(5);
-vAggregateConsumption = lin_simulated(405,:) + varsSS_small(6);
-vAggregateInvestment = lin_simulated(406,:) + varsSS_small(7);
+    vAggregateTFP = lin_simulated(400,:) + varsSS_small(1);
+    vAggregateOutput = lin_simulated(404,:) + varsSS_small(5);
+    vAggregateConsumption = lin_simulated(405,:) + varsSS_small(6);
+    vAggregateInvestment = lin_simulated(406,:) + varsSS_small(7);
 
-Kpath = lin_simulated(401,:) + varsSS_small(2);
+    Kpath = lin_simulated(401,:) + varsSS_small(2);
 
-% Compute log differences for plotting
-vAggregateTFP_reduced = vAggregateTFP;
-vAggregateOutput_reduced = log(vAggregateOutput) - log(varsSS_small(5));
-vAggregateConsumption_reduced = log(vAggregateConsumption) - log(varsSS_small(6));
-vAggregateInvestment_reduced = log(vAggregateInvestment) - log(varsSS_small(7));
+    % Compute log differences for plotting
+    vAggregateTFP_reduced = vAggregateTFP;
+    vAggregateOutput_reduced = log(vAggregateOutput) - log(varsSS_small(5));
+    vAggregateConsumption_reduced = log(vAggregateConsumption) - log(varsSS_small(6));
+    vAggregateInvestment_reduced = log(vAggregateInvestment) - log(varsSS_small(7));
 
-%% Step 6: Plot relevant values
+    %% Step 6: Plot relevant values
 
-% KKpath is the sequence of simulated results using the non-linear dynamics
-% Kpath is the sequence of simulated results using the linearized dynamics
-Drop = 1000;
-DH_Max = 100.0 * max(abs(log(Kpath(1001:end-1)) - log(KKpath(1002:end))));
-DH_Mean = 100.0 * sum(abs(log(Kpath(1001:end-1)) - log(KKpath(1002:end))))/(N - Drop);
+    % KKpath is the sequence of simulated results using the non-linear dynamics
+    % Kpath is the sequence of simulated results using the linearized dynamics
+    Drop = 1000;
+    DH_Max = 100.0 * max(abs(log(Kpath(1001:end-1)) - log(KKpath(1002:end))));
+    DH_Mean = 100.0 * sum(abs(log(Kpath(1001:end-1)) - log(KKpath(1002:end))))/(N - Drop);
 
-% % Simulation path Linear and Non-linear
-% figure
-% plot(KKpath(2:end),'b--','LineWidth',1.5);
-% hold on
-% plot(Kpath(1:end-1),'r-','LineWidth',1.5);
-% title(['Simulaton Path : REITER : $\sigma =$', num2str(ssigmaTFP,'%.3f')], 'interpreter','latex','FontSize',10);
-% xlabel('Simulation time : $T$', 'interpreter','latex','FontSize',10);
-% ylabel('Capital : $K$', 'interpreter','latex','FontSize',10); grid;
-% legend('Non-Linear','Linear','Location','northwest','interpreter','latex');
+    % % Simulation path Linear and Non-linear
+    % figure
+    % plot(KKpath(2:end),'b--','LineWidth',1.5);
+    % hold on
+    % plot(Kpath(1:end-1),'r-','LineWidth',1.5);
+    % title(['Simulaton Path : REITER : $\sigma =$', num2str(ssigmaTFP,'%.3f')], 'interpreter','latex','FontSize',10);
+    % xlabel('Simulation time : $T$', 'interpreter','latex','FontSize',10);
+    % ylabel('Capital : $K$', 'interpreter','latex','FontSize',10); grid;
+    % legend('Non-Linear','Linear','Location','northwest','interpreter','latex');
 
-if (loadtemp)
-    disp('done');
-    disp(' ');
-    if (1-rrhoTFP==0.25)
-        eval(sprintf('save CT_REITER_sigma%1.4f.mat',ssigmaTFP));
-    else % robustness for mu
-        eval(sprintf('save CT_REITER_mu%1.2f_sigma%1.4f.mat',1-rrhoTFP,ssigmaTFP));
-    end    
+    if (loadtemp)
+        disp('done');
+        disp(' ');
+        if (1-rrhoTFP==0.25)
+            eval(sprintf('save CT_REITER_sigma%1.4f.mat',ssigmaTFP));
+        else % robustness for mu
+            eval(sprintf('save CT_REITER_mu%1.2f_sigma%1.4f.mat',1-rrhoTFP,ssigmaTFP));
+        end    
+    end
+    
 end
+
+if (savetime); save etime.mat etime1; end;
 
 %toc(tstart)

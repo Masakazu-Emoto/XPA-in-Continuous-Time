@@ -1,3 +1,5 @@
+# XPA Algorithm in Continuous Time
+
 These are programs for solving Krusell-Smith model in continuous time by the XPA algorithm as described in
 
 * Masakazu Emoto and Takeki Sunakawa (2021) "Applying the Explicit Aggregation Algorithm to Heterogeneous Agent Models in Continuous Time," which is avaialble at https://tkksnk.github.io/wps/
