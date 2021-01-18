@@ -1,9 +1,0 @@
-clear all;
-load ./XPA/CT_XPA_sigma0.0070_kub0.20_klb0.20_zm2.00_intK3_intZ3.mat;
-disp([DH_Max DH_Mean]);
-load ./XPA/CT_XPA_sigma0.0070_kub0.20_klb0.20_zm2.50_intK3_intZ3.mat;
-disp([DH_Max DH_Mean]);
-load ./XPA/CT_XPA_sigma0.0070_kub0.20_klb0.20_zm3.00_intK3_intZ3.mat;
-disp([DH_Max DH_Mean]);
-load ./XPA/CT_XPA_sigma0.0070_kub0.20_klb0.20_zm4.00_intK3_intZ3.mat;
-disp([DH_Max DH_Mean]);
