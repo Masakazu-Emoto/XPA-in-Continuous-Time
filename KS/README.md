@@ -12,4 +12,4 @@ These are programs for solving the Krusell-Smith model in continuous time by the
 
 For questions about the programs, please send an email to: Masakazu Emoto <masakazu.emoto@gmail.com>
 
-The source code is licensed MIT. The website content is licensed CC BY 4.0, see LICENSE.
+The source code is licensed MIT, see LICENSE.

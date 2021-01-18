@@ -1,7 +1,7 @@
 % Figure 3
 clear all;
 
-epsprint = 0;
+epsprint = 1;
 
 kub = 0.2;
 klb = 0.2;
@@ -21,7 +21,7 @@ for i = 1:size(vsig,1)
     eval(sprintf('load ./KS/CT_KS_sigma%1.4f_kub%1.2f_klb%1.2f_zm%1.2f_intK%d_intZ%d.mat',sigma,kub,klb,zm,intK,intZ));
     DH_KS(i,1) = DH_Max;
     DH_KS(i,2) = DH_Mean;
-    eval(sprintf('load ./XPA/CT_XPA_sigma%1.4f_kub%1.2f_klb%1.2f_zm%1.2f_intK%d_intZ%d.mat',sigma,kub,klb,2.5,intK,intZ));
+    eval(sprintf('load ./XPA/CT_XPA_sigma%1.4f_kub%1.2f_klb%1.2f_zm%1.2f_intK%d_intZ%d.mat',sigma,kub,klb,zm,intK,intZ));
     DH_XPA(i,1) = DH_Max;
     DH_XPA(i,2) = DH_Mean;
     eval(sprintf('load ./REITER/CT_REITER_sigma%1.4f.mat DH_Max DH_Mean',sigma));
