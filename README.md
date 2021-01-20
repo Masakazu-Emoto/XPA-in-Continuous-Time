@@ -17,6 +17,8 @@ This repository includes programs for solving the Krusell-Smith model in continu
 
   3. Then run `Figure1and2.m` and `Figure3.m` to replicate the figures and tables in the paper.
 
+* You can also directly run each `main_XPA_v1.m`, `main_KS_v1.m`, or `main_REITER_v1.m` by setting `diagnose = 1` to see how each algorithm works.
+
 * For the robustness checks in Appendix, you may want to change the parameter $\mu$ and the above meta parameters in `main_XPA_v1.m` and `main_KS_v1.m` and rerun `run.m`
 
 For questions about the programs, please send an email to: Masakazu Emoto <masakazu.emoto@gmail.com>
