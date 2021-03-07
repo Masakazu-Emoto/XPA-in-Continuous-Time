@@ -9,7 +9,7 @@ These are programs for solving Krusell-Smith model in continuous time by the XPA
   * Sunakawa, T. (2020, Computational Economics) "Applying the Explicit Aggregation Algorithm to Heterogeneous Macro Models"
   * The original code is downloaded from https://github.com/jesusfv/financial-frictions/tree/master/KS_LR and https://github.com/tkksnk/Xpa
 
-* To run the main program with the baseline parameters in `common/parameter.m` and see some results, run `main_XPA_v1.m` with `diagnose = 1;` and `loadtemp = 0;`
+* To run the main program with the baseline parameters in `common/parameter.m`, run `main_XPA_v1.m` with `diagnose = 1;` and `loadtemp = 0;`
 
 For questions about the programs, please send an email to: Masakazu Emoto <masakazu.emoto@gmail.com>
 
