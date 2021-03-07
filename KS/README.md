@@ -8,7 +8,7 @@ These are programs for solving the Krusell-Smith model in continuous time by the
   * Fernandez-Villaverde, J., S. Hurtado and G. Nuno (2019) "Solving the Krusell-Smith (1998) model" "Financial Frictions and the Wealth Distribution"
   * The original code is downloaded from https://github.com/jesusfv/financial-frictions/tree/master/KS_LR
 
-* To run the main program with the baseline parameters in `common/parameter.m` and see some results, run `main_KS_v1.m` with `diagnose = 1;` and `loadtemp = 0;`
+* To run the main program with the baseline parameters in `common/parameter.m`, run `main_KS_v1.m` with `diagnose = 1;` and `loadtemp = 0;`
 
 For questions about the programs, please send an email to: Masakazu Emoto <masakazu.emoto@gmail.com>
 
