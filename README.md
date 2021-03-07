@@ -1,6 +1,6 @@
 This repository includes programs for solving the Krusell-Smith model in continuous time by the KS, XPA, and REITER algorithms as described in
 
-* Masakazu Emoto and Takeki Sunakawa (2021) "Applying the Explicit Aggregation Algorithm to Heterogeneous Agent Models in Continuous Time," which is avaialble at https://tkksnk.github.io/wps/
+* Masakazu Emoto and Takeki Sunakawa (2021) "Applying the Explicit Aggregation Algorithm to Heterogeneous Agent Models in Continuous Time," avaialble at https://tkksnk.github.io/wps/
 
 * To replicate the results in the paper,
 
@@ -13,11 +13,11 @@ This repository includes programs for solving the Krusell-Smith model in continu
   ```
   in `main_XPA_v1.m` and `main_KS_v1.m`.
 
-  2. run `run.m` in each XPA, KS, and REITER folders, which solves model for different values of the standard deviation of aggregate productivity by calling `main_XPA_v1.m`, `main_KS_v1.m`, or `main_REITER_v1.m`. It may take time for a while especially for KS. Also note that `UpwindKZ = 0` does not work for XPA.
+  2. run `run.m` in each XPA, KS, and REITER folders, which solves the model for different values of the standard deviation of aggregate productivity by calling `main_XPA_v1.m`, `main_KS_v1.m`, or `main_REITER_v1.m`. It may take time for a while especially for KS. Also note that `UpwindKZ = 0` does not work for XPA.
 
   3. Then run `Figure1and2.m` and `Figure3.m` to replicate the figures and tables in the paper.
 
-* You can also directly run each `main_XPA_v1.m`, `main_KS_v1.m`, or `main_REITER_v1.m` by setting `diagnose = 1` to see how each algorithm works.
+* You can also directly run each `main_XPA_v1.m`, `main_KS_v1.m`, or `main_REITER_v1.m` by setting `diagnose = 1`.
 
 * For the robustness checks in Appendix, you may want to change the parameter $\mu$ and the above meta parameters in `main_XPA_v1.m` and `main_KS_v1.m` and rerun `run.m`
 
